@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Civilizational Shift</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --accent: #c8a96e;
+    --accent2: #7b6cff;
+    --text: #e8e4dc;
+    --muted: #6b6875;
+    --line: rgba(200,169,110,0.2);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-weight: 300;
+    line-height: 1.8;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.5;
+  }
+
+  .page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 100px 40px 120px;
+  }
+
+  /* Header */
+  .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.1s forwards;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  /* Lede */
+  .lede {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    line-height: 1.2;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 64px;
+    opacity: 0;
+    animation: fadeUp 0.9s ease 0.25s forwards;
+  }
+
+  .lede em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  /* Divider */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: var(--line);
+    margin: 48px 0;
+    opacity: 0;
+    animation: fadeIn 1s ease 0.4s forwards;
+  }
+
+  /* Body paragraphs */
+  .body-text {
+    font-size: 15px;
+    color: #bbb6c8;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.5s forwards;
+  }
+
+  .body-text p {
+    margin-bottom: 28px;
+  }
+
+  /* Pull quote */
+  .pull-quote {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.25rem, 3vw, 1.8rem);
+    font-style: italic;
+    line-height: 1.4;
+    color: var(--text);
+    border-left: 3px solid var(--accent);
+    padding: 20px 0 20px 32px;
+    margin: 48px 0;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.65s forwards;
+  }
+
+  /* Highlight span */
+  .hl {
+    color: var(--accent);
+  }
+
+  .hl2 {
+    color: #a89bff;
+  }
+
+  /* Second-order callout */
+  .callout {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent2);
+    padding: 28px 32px;
+    margin: 40px 0;
+    font-size: 14px;
+    color: #9f9ab5;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.75s forwards;
+  }
+
+  .callout .callout-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .callout .callout-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(123,108,255,0.3);
+  }
+
+  /* Final statement */
+  .final {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.5rem, 4vw, 2.4rem);
+    font-weight: 700;
+    line-height: 1.3;
+    color: #fff;
+    margin-top: 64px;
+    padding-top: 48px;
+    border-top: 1px solid var(--line);
+    opacity: 0;
+    animation: fadeUp 0.9s ease 0.9s forwards;
+  }
+
+  .final span {
+    display: inline-block;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Decorative orb */
+  .orb {
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(123,108,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .orb2 {
+    position: fixed;
+    bottom: -150px;
+    left: -150px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(200,169,110,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Scroll-triggered paragraphs */
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div class="orb"></div>
+<div class="orb2"></div>
+
+<div class="page">
+  <div class="eyebrow">Essay — Technology & Society</div>
+
+  <h1 class="lede">
+    AI might not just disrupt jobs — it could quietly <em>reshape the foundations</em> of civilization.
+  </h1>
+
+  <div class="divider"></div>
+
+  <div class="body-text">
+    <p>We often talk about automation, layoffs, and productivity gains. But what happens when AI doesn't just replace tasks — it <span class="hl">replaces purpose?</span></p>
+
+    <p>Work has never been only about income. It gives structure, identity, meaning, community. If AI displaces millions faster than society can adapt, the impact won't just be economic — it will be <span class="hl">psychological</span>. Widespread joblessness can fuel anxiety, loss of dignity, depression. For some, that spiral becomes devastating.</p>
+  </div>
+
+  <div class="pull-quote reveal">
+    "What happens when AI doesn't just replace tasks — it replaces purpose?"
+  </div>
+
+  <div class="callout reveal">
+    <div class="callout-label">Second-order effect</div>
+    <p>And there's a second-order effect we don't talk about enough: If young people feel uncertain about their future — if they believe their skills won't matter, their careers won't be stable, or their economic footing will be fragile — they may hesitate to build families.</p>
+  </div>
+
+  <div class="body-text reveal">
+    <p>We are already seeing <span class="hl2">declining birth rates</span> across many developed nations. When people lose confidence in the future, they delay or avoid having children.</p>
+
+    <p>A sustained population decline doesn't just change demographics. It reshapes economies, social systems, innovation cycles — <span class="hl">even cultural continuity.</span></p>
+  </div>
+
+  <div class="final reveal">
+    AI is not just a technology shift.<br>
+    It is a <span>civilizational shift.</span>
+  </div>
+</div>
+
+<script>
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15 });
+  reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
