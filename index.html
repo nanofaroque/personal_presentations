@@ -1,31 +1,460 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Research & Work</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0f0e17;
+    --paper: #0f0e17;
+    --muted: #6b7280;
+    --accent: #ff6b6b;
+    --accent2: #ffd93d;
+    --accent3: #6bcb77;
+    --line: rgba(255,255,255,0.08);
+    --card: rgba(255,255,255,0.03);
+    --text: #e8e6f0;
+    --text-soft: #9d9bb0;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* === BACKGROUND === */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 10% 20%, rgba(192, 57, 43, 0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 90% 80%, rgba(107, 203, 119, 0.08) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 50% 50%, rgba(255, 217, 61, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Subtle dot-grid */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Floating orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 0;
+    animation: drift linear infinite;
+  }
+
+  .orb-1 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, #c0392b, transparent 70%);
+    top: -150px; left: -100px;
+    animation-duration: 25s;
+    animation-name: drift1;
+  }
+
+  .orb-2 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, #6bcb77, transparent 70%);
+    bottom: -100px; right: -80px;
+    animation-duration: 30s;
+    animation-name: drift2;
+  }
+
+  .orb-3 {
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, #ffd93d, transparent 70%);
+    top: 45%; left: 60%;
+    opacity: 0.1;
+    animation-duration: 20s;
+    animation-name: drift3;
+  }
+
+  @keyframes drift1 {
+    0%   { transform: translate(0, 0) scale(1); }
+    33%  { transform: translate(80px, 60px) scale(1.05); }
+    66%  { transform: translate(20px, 100px) scale(0.95); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+  @keyframes drift2 {
+    0%   { transform: translate(0, 0) scale(1); }
+    33%  { transform: translate(-60px, -40px) scale(1.08); }
+    66%  { transform: translate(-100px, 20px) scale(0.97); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+  @keyframes drift3 {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(-80px, -60px) scale(1.1); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+
+  /* Decorative top bar */
+  .top-bar {
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 50%, var(--accent3) 100%);
+    position: relative;
+    z-index: 10;
+  }
+
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 60px 32px 100px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Page header */
+  .page-header {
+    margin-bottom: 70px;
+    position: relative;
+  }
+
+  .page-header::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 2px;
+    background: var(--accent);
+    margin-top: 20px;
+  }
+
+  .label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .page-header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+    line-height: 1.1;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .page-header h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  /* Nav */
+  nav {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 28px;
+  }
+
+  nav a {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    text-decoration: none;
+    padding: 5px 12px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    transition: all 0.2s;
+    background: rgba(255,255,255,0.02);
+  }
+
+  nav a:hover {
+    color: var(--text);
+    border-color: rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.06);
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 64px;
+    opacity: 0;
+    transform: translateY(18px);
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  .section:nth-child(1) { animation-delay: 0.1s; }
+  .section:nth-child(2) { animation-delay: 0.2s; }
+  .section:nth-child(3) { animation-delay: 0.3s; }
+  .section:nth-child(4) { animation-delay: 0.4s; }
+  .section:nth-child(5) { animation-delay: 0.5s; }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .section-header h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.3rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  .section-header .count {
+    font-size: 11px;
+    color: var(--text-soft);
+    background: rgba(255,255,255,0.07);
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Items */
+  .item {
+    display: flex;
+    gap: 18px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: baseline;
+    transition: background 0.15s;
+  }
+
+  .item:first-of-type {
+    border-top: 1px solid var(--line);
+  }
+
+  .item-num {
+    font-size: 11px;
+    color: var(--text-soft);
+    font-variant-numeric: tabular-nums;
+    min-width: 20px;
+    padding-top: 1px;
+    opacity: 0.5;
+  }
+
+  .item-body { flex: 1; }
+
+  .item-body a {
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.925rem;
+    line-height: 1.5;
+    display: inline;
+    background-image: linear-gradient(var(--accent), var(--accent));
+    background-size: 0% 1px;
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    transition: background-size 0.25s ease, color 0.2s;
+  }
+
+  .item-body a:hover {
+    background-size: 100% 1px;
+    color: #fff;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #ffd93d;
+    background: rgba(255, 217, 61, 0.1);
+    border: 1px solid rgba(255, 217, 61, 0.3);
+    padding: 2px 7px;
+    border-radius: 2px;
+    margin-left: 8px;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+  }
+
+  .pending {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 2px 7px;
+    border-radius: 2px;
+    margin-left: 8px;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+  }
+
+  /* Divider between sections */
+  .section-divider {
+    width: 100%;
+    height: 1px;
+    background: var(--line);
+    margin: 8px 0 56px;
+    opacity: 0.5;
+  }
+</style>
+</head>
 <body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+<div class="top-bar"></div>
+<div class="container">
 
-<h2 id="patents">Patents</h2>
-<ol>
-<li><p><a href="https://patents.google.com/patent/US11792301B1/en">Parallelized automated creation of proxy manifests. US 11,792,301 B1</a></p></li>
-<li><p><a href="https://patents.google.com/">Patent is filed by AWS on "Dynamic Routing of Application network traffic"(not public yet)</a></p></li>
-<li><p><a href="https://patents.justia.com/patent/12524276">Tracing processes in distributed container systems</a></p></li>
-<li><p><a href="https://patents.google.com/">Patent is filed by AWS on "Short lived certificate"(not public yet)</a></p></li>  
-</ol>
-<h2 id="papers">Papers</h2>
-<ol>
-<li><p><a href="https://ssd.qbithabib.com">Eyana: The SSD SimulatorExploring the Inner Workings of Solid-State Drives(Best paper award at KCS 2024)</a></p></li>
-<li><p><a href="https://www.google.com/">Eshyana: The Quantum Computer SimulatorExploring the Inner Workings of Quantum Computer</a></p></li>
-<li><p><a href="https://link.springer.com/chapter/10.1007/978-981-16-0739-4_67">Dengue Fever Prediction</a></p></li>
-</ol>
-<h2 id="talks">Talks</h2>
-<ol>
-<li><p><a href="https://github.com/nanofaroque/personal_presentations/blob/main/Talk%20at%20Jinju.pdf">Talk at GNU(Gyeongsang National University), South Korea</a></p> </li>
-<li><p><a href="https://github.com/nanofaroque/personal_presentations/blob/main/cassandra_TW_presentation.pdf">Talk at Thoughtworks on "Cassandra internals"</a></p> </li>
-<li><p><a href="https://github.com/nanofaroque/personal_presentations/blob/main/Talk%20at%20Jinju.pdf">Talk at Thoughtworks on "Redshift</a></p> </li>
-</ol>
+  <header class="page-header">
+    <span class="label">Selected Works</span>
+    <h1>Patents, Papers,<br><em>Talks & More</em></h1>
+    <nav>
+      <a href="#patents">Patents</a>
+      <a href="#papers">Papers</a>
+      <a href="#talks">Talks</a>
+      <a href="#interviews">Interviews</a>
+      <a href="#posts">Posts</a>
+    </nav>
+  </header>
 
-<h2 id="interviews">Interviews</h2>
-<ol>
-<li><p><a href="https://youtu.be/vzJviOyiwA0?si=nPPN0Y8rvyz79dmR">Podcast on my life story with RJ Kebria</a></p> </li>
-</ol>  
+  <!-- PATENTS -->
+  <div class="section" id="patents">
+    <div class="section-header">
+      <h2>Patents</h2>
+      <span class="count">4</span>
+    </div>
 
+    <div class="item">
+      <span class="item-num">01</span>
+      <div class="item-body">
+        <a href="https://patents.google.com/patent/US11792301B1/en">Parallelized automated creation of proxy manifests — US 11,792,301 B1</a>
+      </div>
+    </div>
+    <div class="item">
+      <span class="item-num">02</span>
+      <div class="item-body">
+        <a href="https://patents.google.com/">Dynamic Routing of Application Network Traffic — Filed by AWS</a>
+        <span class="pending">Pending</span>
+      </div>
+    </div>
+    <div class="item">
+      <span class="item-num">03</span>
+      <div class="item-body">
+        <a href="https://patents.justia.com/patent/12524276">Tracing processes in distributed container systems</a>
+      </div>
+    </div>
+    <div class="item">
+      <span class="item-num">04</span>
+      <div class="item-body">
+        <a href="https://patents.google.com/">Short Lived Certificate — Filed by AWS</a>
+        <span class="pending">Pending</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAPERS -->
+  <div class="section" id="papers">
+    <div class="section-header">
+      <h2>Papers</h2>
+      <span class="count">3</span>
+    </div>
+
+    <div class="item">
+      <span class="item-num">01</span>
+      <div class="item-body">
+        <a href="https://ssd.qbithabib.com">Eyana: The SSD Simulator — Exploring the Inner Workings of Solid-State Drives</a>
+        <span class="badge">Best Paper · KCS 2024</span>
+      </div>
+    </div>
+    <div class="item">
+      <span class="item-num">02</span>
+      <div class="item-body">
+        <a href="https://www.google.com/">Eshyana: The Quantum Computer Simulator — Exploring the Inner Workings of Quantum Computers</a>
+      </div>
+    </div>
+    <div class="item">
+      <span class="item-num">03</span>
+      <div class="item-body">
+        <a href="https://link.springer.com/chapter/10.1007/978-981-16-0739-4_67">Dengue Fever Prediction</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- TALKS -->
+  <div class="section" id="talks">
+    <div class="section-header">
+      <h2>Talks</h2>
+      <span class="count">3</span>
+    </div>
+
+    <div class="item">
+      <span class="item-num">01</span>
+      <div class="item-body">
+        <a href="https://github.com/nanofaroque/personal_presentations/blob/main/Talk%20at%20Jinju.pdf">Talk at GNU — Gyeongsang National University, South Korea</a>
+      </div>
+    </div>
+    <div class="item">
+      <span class="item-num">02</span>
+      <div class="item-body">
+        <a href="https://github.com/nanofaroque/personal_presentations/blob/main/cassandra_TW_presentation.pdf">Talk at Thoughtworks — Cassandra Internals</a>
+      </div>
+    </div>
+    <div class="item">
+      <span class="item-num">03</span>
+      <div class="item-body">
+        <a href="https://github.com/nanofaroque/personal_presentations/blob/main/Talk%20at%20Jinju.pdf">Talk at Thoughtworks — Redshift</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERVIEWS -->
+  <div class="section" id="interviews">
+    <div class="section-header">
+      <h2>Interviews</h2>
+      <span class="count">1</span>
+    </div>
+
+    <div class="item">
+      <span class="item-num">01</span>
+      <div class="item-body">
+        <a href="https://youtu.be/vzJviOyiwA0?si=nPPN0Y8rvyz79dmR">Podcast on my life story with RJ Kebria</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- POSTS -->
+  <div class="section" id="posts">
+    <div class="section-header">
+      <h2>Posts</h2>
+      <span class="count">0</span>
+    </div>
+
+    <div class="item">
+      <span class="item-num">—</span>
+      <div class="item-body" style="color: var(--muted); font-size: 0.9rem; font-style: italic;">
+        Posts coming soon.
+      </div>
+    </div>
+  </div>
+
+</div>
 </body>
 </html>
