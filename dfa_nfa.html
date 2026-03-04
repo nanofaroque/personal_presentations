@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Non-Deterministic Bomb in Your Codebase</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d0d0d;
+    --paper: #f5f0e8;
+    --red: #c0392b;
+    --amber: #d4a017;
+    --muted: #6b6560;
+    --rule: #c8bfb0;
+    --code-bg: #1a1a1a;
+    --code-text: #e8d9b5;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  /* Grain texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* HEADER */
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding: 1.2rem 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+    z-index: 100;
+  }
+
+  .masthead {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .issue-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--red);
+    border: 1px solid var(--red);
+    padding: 0.2rem 0.6rem;
+    text-transform: uppercase;
+  }
+
+  /* HERO */
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 90vh;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .hero-left {
+    padding: 5rem 4rem;
+    border-right: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .category-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .category-label::before {
+    content: '';
+    display: block;
+    width: 2rem;
+    height: 1px;
+    background: var(--red);
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.8rem, 5vw, 4.5rem);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 2rem;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--red);
+  }
+
+  .hero-deck {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: var(--muted);
+    max-width: 480px;
+    font-weight: 400;
+    margin-bottom: 3rem;
+  }
+
+  .byline {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .byline-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    line-height: 1.8;
+  }
+
+  .byline-text strong {
+    color: var(--ink);
+    display: block;
+    font-size: 0.8rem;
+  }
+
+  /* Hero visual — state machine diagram */
+  .hero-right {
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .diagram-container {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .diagram-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: #555;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+
+  svg.state-diagram {
+    width: 100%;
+    height: auto;
+  }
+
+  /* Pulsing animation for NFA node */
+  @keyframes pulse-red {
+    0%, 100% { opacity: 1; filter: drop-shadow(0 0 0px #c0392b); }
+    50% { opacity: 0.7; filter: drop-shadow(0 0 12px #c0392b); }
+  }
+
+  .nfa-node { animation: pulse-red 2s ease-in-out infinite; }
+
+  @keyframes dash {
+    to { stroke-dashoffset: -20; }
+  }
+  .dashed-arrow {
+    stroke-dasharray: 6 4;
+    animation: dash 1s linear infinite;
+  }
+
+  /* ARTICLE BODY */
+  article {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 5rem 2rem 8rem;
+  }
+
+  .drop-cap::first-letter {
+    font-family: 'Playfair Display', serif;
+    font-size: 5.5rem;
+    font-weight: 900;
+    float: left;
+    line-height: 0.78;
+    margin-right: 0.12em;
+    margin-top: 0.08em;
+    color: var(--ink);
+  }
+
+  p {
+    font-size: 1.05rem;
+    line-height: 1.85;
+    margin-bottom: 1.6rem;
+    font-weight: 300;
+    color: #1a1a1a;
+  }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    margin: 3.5rem 0 1.2rem;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin: 2.5rem 0 0.8rem;
+  }
+
+  /* Pull quote */
+  .pull-quote {
+    margin: 3rem -3rem;
+    padding: 2.5rem 3rem;
+    border-top: 3px solid var(--ink);
+    border-bottom: 3px solid var(--ink);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-style: italic;
+    line-height: 1.4;
+    color: var(--ink);
+    position: relative;
+  }
+
+  .pull-quote::before {
+    content: '\201C';
+    font-size: 6rem;
+    line-height: 0;
+    position: absolute;
+    top: 3rem;
+    left: 2rem;
+    color: var(--rule);
+    font-family: 'Playfair Display', serif;
+  }
+
+  .pull-quote em {
+    color: var(--red);
+    font-style: italic;
+  }
+
+  /* Code block */
+  .code-block {
+    background: var(--code-bg);
+    border-radius: 2px;
+    padding: 1.8rem 2rem;
+    margin: 2.5rem 0;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 1rem;
+  }
+
+  .code-block code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--code-text);
+    line-height: 1.7;
+    white-space: pre;
+    display: block;
+  }
+
+  .code-block code .comment { color: #666; }
+  .code-block code .keyword { color: #c0392b; }
+  .code-block code .string { color: #d4a017; }
+  .code-block code .func { color: #7ec8c8; }
+
+  /* Callout box */
+  .callout {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 2rem 2.5rem;
+    margin: 3rem 0;
+    border-left: 4px solid var(--red);
+  }
+
+  .callout p {
+    color: var(--paper);
+    font-size: 0.95rem;
+    margin-bottom: 0;
+    opacity: 0.9;
+  }
+
+  .callout strong {
+    color: var(--amber);
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 1;
+  }
+
+  /* Comparison table */
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin: 3rem 0;
+    border: 1px solid var(--ink);
+    font-size: 0.9rem;
+  }
+
+  .comp-head {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.8rem 1.2rem;
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .comp-head.right { border-left: 1px solid #333; color: var(--red); }
+
+  .comp-item {
+    padding: 0.9rem 1.2rem;
+    border-bottom: 1px solid var(--rule);
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .comp-item::before {
+    content: '✓';
+    color: #3a9e6e;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .comp-item.danger::before {
+    content: '✗';
+    color: var(--red);
+  }
+
+  .comp-item.right { border-left: 1px solid var(--rule); }
+
+  /* Severity meter */
+  .sev-meter {
+    margin: 3rem 0;
+    padding: 2rem;
+    border: 1px solid var(--rule);
+    background: #faf8f4;
+  }
+
+  .sev-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .sev-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .sev-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    width: 130px;
+    flex-shrink: 0;
+    color: var(--muted);
+  }
+
+  .sev-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: var(--rule);
+    border-radius: 0;
+    overflow: hidden;
+  }
+
+  .sev-bar {
+    height: 100%;
+    background: var(--red);
+    transform-origin: left;
+    transform: scaleX(0);
+    animation: growBar 1.2s ease-out forwards;
+  }
+
+  @keyframes growBar {
+    to { transform: scaleX(1); }
+  }
+
+  .sev-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--red);
+    width: 30px;
+    text-align: right;
+  }
+
+  /* Horizontal rule */
+  .section-rule {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 3rem 0 2rem;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .section-rule::before, .section-rule::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  /* Footer */
+  footer {
+    border-top: 2px solid var(--ink);
+    padding: 3rem 4rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .footer-logo {
+    font-weight: 500;
+    color: var(--ink);
+    font-size: 0.8rem;
+  }
+
+  /* Scroll reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (max-width: 768px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero-right { min-height: 300px; }
+    .hero-left { padding: 3rem 1.5rem; }
+    header { padding: 1rem 1.5rem; }
+    article { padding: 3rem 1.5rem 5rem; }
+    .pull-quote { margin: 2rem 0; font-size: 1.3rem; }
+    .comparison { grid-template-columns: 1fr; }
+    .comp-item.right { border-left: none; border-top: none; }
+    footer { flex-direction: column; gap: 1rem; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <h1>The <em>Non-Deterministic</em> Bomb Ticking in Your Codebase</h1>
+    <p class="hero-deck">Your computer is a perfect state machine. AI is not. When these two worlds collide at production scale — without adequate test coverage — someone is going to have a very bad day on-call.</p>
+
+  </div>
+
+  <div class="hero-right">
+    <div class="diagram-container">
+      <div class="diagram-title">DFA vs NFA — The Core Difference</div>
+      <svg class="state-diagram" viewBox="0 0 400 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- DFA Section -->
+        <text x="80" y="28" fill="#555" font-family="IBM Plex Mono" font-size="9" letter-spacing="2" text-anchor="middle">DFA</text>
+        <!-- States -->
+        <circle cx="40" cy="70" r="22" stroke="#888" stroke-width="1.5"/>
+        <circle cx="120" cy="70" r="22" stroke="#888" stroke-width="1.5"/>
+        <circle cx="200" cy="70" r="22" stroke="#4caf88" stroke-width="1.5"/>
+        <circle cx="200" cy="70" r="17" stroke="#4caf88" stroke-width="1"/>
+        <!-- DFA labels -->
+        <text x="40" y="75" fill="#ccc" font-family="IBM Plex Mono" font-size="10" text-anchor="middle">q0</text>
+        <text x="120" y="75" fill="#ccc" font-family="IBM Plex Mono" font-size="10" text-anchor="middle">q1</text>
+        <text x="200" y="75" fill="#4caf88" font-family="IBM Plex Mono" font-size="10" text-anchor="middle">q2</text>
+        <!-- DFA arrows -->
+        <path d="M62 70 L97 70" stroke="#888" stroke-width="1.5" marker-end="url(#arr)"/>
+        <path d="M142 70 L177 70" stroke="#888" stroke-width="1.5" marker-end="url(#arr)"/>
+        <path d="M20 70 L17 70" stroke="#888" stroke-width="1.5" marker-end="url(#arr)"/>
+        <!-- Input labels -->
+        <text x="79" y="62" fill="#666" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">0</text>
+        <text x="159" y="62" fill="#666" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">1</text>
+        <!-- DFA caption -->
+        <text x="120" y="112" fill="#555" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Same input → Always same output</text>
+
+        <!-- Divider -->
+        <line x1="10" y1="130" x2="390" y2="130" stroke="#333" stroke-width="0.5"/>
+
+        <!-- NFA Section -->
+        <text x="200" y="158" fill="#555" font-family="IBM Plex Mono" font-size="9" letter-spacing="2" text-anchor="middle">NFA (non-deterministic)</text>
+
+        <!-- NFA States -->
+        <circle cx="80" cy="210" r="22" stroke="#888" stroke-width="1.5"/>
+        <g class="nfa-node">
+          <circle cx="200" cy="195" r="22" stroke="#c0392b" stroke-width="1.5"/>
+          <circle cx="200" cy="195" r="16" stroke="#c0392b" stroke-width="0.5" stroke-dasharray="3 2"/>
+        </g>
+        <circle cx="200" cy="245" r="22" stroke="#d4a017" stroke-width="1.5"/>
+        <circle cx="320" cy="220" r="22" stroke="#4caf88" stroke-width="1.5"/>
+        <circle cx="320" cy="220" r="17" stroke="#4caf88" stroke-width="1"/>
+
+        <!-- NFA labels -->
+        <text x="80" y="215" fill="#ccc" font-family="IBM Plex Mono" font-size="10" text-anchor="middle">s0</text>
+        <text x="200" y="200" fill="#c0392b" font-family="IBM Plex Mono" font-size="10" text-anchor="middle">s1?</text>
+        <text x="200" y="250" fill="#d4a017" font-family="IBM Plex Mono" font-size="10" text-anchor="middle">s2?</text>
+        <text x="320" y="225" fill="#4caf88" font-family="IBM Plex Mono" font-size="10" text-anchor="middle">s3</text>
+
+        <!-- NFA arrows (dashed = non-deterministic choice) -->
+        <path d="M101 202 L177 197" stroke="#c0392b" stroke-width="1.2" class="dashed-arrow" marker-end="url(#arrRed)"/>
+        <path d="M101 218 L177 243" stroke="#d4a017" stroke-width="1.2" class="dashed-arrow" marker-end="url(#arrAmber)"/>
+        <path d="M222 198 L297 213" stroke="#888" stroke-width="1.2" marker-end="url(#arr)"/>
+        <path d="M222 243 L297 228" stroke="#888" stroke-width="1.2" marker-end="url(#arr)"/>
+        <path d="M58 210 L55 210" stroke="#888" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Question marks -->
+        <text x="132" y="194" fill="#c0392b" font-family="IBM Plex Mono" font-size="11" text-anchor="middle">?</text>
+        <text x="132" y="240" fill="#d4a017" font-family="IBM Plex Mono" font-size="11" text-anchor="middle">?</text>
+
+        <!-- Caption -->
+        <text x="200" y="276" fill="#555" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Same input → Multiple possible outputs</text>
+
+        <!-- Arrowhead markers -->
+        <defs>
+          <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L6,3 z" fill="#888"/>
+          </marker>
+          <marker id="arrRed" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L6,3 z" fill="#c0392b"/>
+          </marker>
+          <marker id="arrAmber" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L6,3 z" fill="#d4a017"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ARTICLE -->
+<article>
+
+  <p class="drop-cap reveal">Every computer you have ever touched is, at its core, a Deterministic Finite Automaton. Feed it the same input, you get the same output. Every time. Without exception. This is not a quirk — it is the bedrock on which all of software engineering is built. We write tests because we expect determinism. We build CI/CD pipelines because we expect determinism. We sleep soundly at 2 AM because, somewhere in a data center, a machine is faithfully executing a function the same way it did a billion times before.</p>
+
+  <p class="reveal">But something is changing. Quietly, irreversibly, we are welding a non-deterministic engine into the deterministic machine. And most codebases are not ready for what happens next.</p>
+
+  <div class="section-rule reveal">State Machine Theory</div>
+
+  <h2 class="reveal">Two Kinds of Machines</h2>
+
+  <p class="reveal">Formal language theory gives us two flavors of finite automata. The <strong>Deterministic Finite Automaton (DFA)</strong> has exactly one possible transition for every state-input pair. Given a state and a symbol, there is exactly one place to go. No ambiguity. No surprises. The <strong>Non-deterministic Finite Automaton (NFA)</strong>, by contrast, can have multiple valid transitions — or none at all — for the same input. It explores multiple paths simultaneously, accepting if <em>any</em> path leads to a valid end state.</p>
+
+  <p class="reveal">Your CPU? DFA. Your compiler? DFA. Your database? DFA. The entire edifice of reliable software? Built on DFAs, all the way down. When you call a sorting function, it does not sometimes return a different order depending on its mood. When a SHA-256 hash runs, it does not occasionally produce a different digest because it felt creative that morning. Determinism is what makes software <em>trustworthy</em>.</p>
+
+  <div class="callout reveal">
+    <strong>⚡ Core Principle</strong>
+    <p>A DFA is the reason debugging is possible. If the same input always produces the same output, you can reproduce bugs. You can write regression tests. You can bisect a git history. Determinism is not just a property of computers — it is the foundation of engineering accountability.</p>
+  </div>
+
+  <h2 class="reveal">Enter the NFA in Your Stack</h2>
+
+  <p class="reveal">Large language models are, in a meaningful sense, NFAs that got extraordinarily good at picking the <em>right</em> path. Feed the same prompt twice to a model with temperature > 0, and you will get different tokens. The model samples from a probability distribution — it is not executing a lookup table. The output is not determined; it is <em>probable</em>.</p>
+
+  <p class="reveal">This is not a bug. It is the design. The non-determinism is what makes AI feel creative, contextual, and generative. It is what allows a model to write novel code, not just regurgitate snippets. The NFA is the feature.</p>
+
+  <p class="reveal">But now that NFA is writing code that will run inside your DFA. And that is where the tension begins.</p>
+
+  <div class="pull-quote reveal">
+    "We are welding a <em>non-deterministic engine</em> into the deterministic machine — and most codebases are not ready for what happens next."
+  </div>
+
+  <div class="section-rule reveal">The Risk Vector</div>
+
+  <h2 class="reveal">Why AI-Generated Changes Will Create More Incidents</h2>
+
+  <p class="reveal">The argument is sometimes made that humans create incidents too — a stray off-by-one error, a forgotten null check, a race condition missed in review. All true. But the comparison breaks down when you examine the structure of how human changes and AI changes enter production.</p>
+
+  <div class="comparison reveal">
+    <div class="comp-head">Human PR</div>
+    <div class="comp-head right">AI-Generated PR</div>
+
+    <div class="comp-item">Typically 50–200 lines of code</div>
+    <div class="comp-item right danger">Often 500–2000+ lines in a single diff</div>
+
+    <div class="comp-item">Reviewed line-by-line by peers</div>
+    <div class="comp-item right danger">Often reviewed by AI, not humans</div>
+
+    <div class="comp-item">Author deeply understands intent</div>
+    <div class="comp-item right danger">Author may not understand generated logic</div>
+
+    <div class="comp-item">Mistakes surface in code review</div>
+    <div class="comp-item right danger">Reviewers defer to AI confidence</div>
+
+    <div class="comp-item">Tests written with the logic in mind</div>
+    <div class="comp-item right danger">Tests may not cover non-deterministic edge cases</div>
+  </div>
+
+  <p class="reveal">The combinatorial blast radius of a large AI diff is enormous. A 1,500-line change touching five services, reviewed at high speed because "the AI checked it" — that is not the same risk profile as a two-line fix that three engineers scrutinized for twenty minutes.</p>
+
+  <h3 class="reveal">The Confidence Trap</h3>
+
+  <p class="reveal">Here is the pernicious part: AI-generated code <em>looks</em> correct. It follows idioms. It uses the right variable names. It handles the happy path beautifully. The subtle failure modes — the edge case at 10x traffic, the race condition under partition, the off-by-one in a timezone conversion at midnight UTC — these are invisible until they are not. And because the code looks so clean, human reviewers lower their guard. The very quality of the output is a risk multiplier.</p>
+
+  <div class="code-block reveal">
+    <div class="code-label">Diff Anatomy — The Risk Isn't in What You See</div>
+    <code><span class="comment"># Human diff: 47 lines, 1 function, clearly scoped</span>
+<span class="comment"># Reviewer time: ~20 minutes. Risk surface: small.</span>
+
+<span class="comment"># AI diff: 1,400 lines, 6 files, 3 new abstractions</span>
+<span class="comment"># Reviewer time: ~15 minutes. Risk surface: enormous.</span>
+
+<span class="keyword">def</span> <span class="func">process_payment</span>(user_id, amount, currency):
+    <span class="comment"># Looks right. Tests pass. Ships to prod.</span>
+    <span class="comment"># The currency rounding logic is wrong for JPY.</span>
+    <span class="comment"># This will never appear in a unit test.</span>
+    <span class="comment"># It surfaces at 3 AM on a Tuesday.</span>
+    result = convert_and_round(amount, currency)
+    <span class="keyword">return</span> charge(user_id, result)</code>
+  </div>
+
+  <h2 class="reveal">The Safety Net That Was Never Tightened</h2>
+
+  <p class="reveal">Unit tests. Integration tests. Canary deployments. These are the guardrails we built for a DFA world. They are necessary — but they were designed around human-scale change. A developer writes a function, writes tests for the cases they can think of, and ships. The test suite catches regressions. The canary catches production anomalies. The on-call engineer catches whatever slips through.</p>
+
+  <p class="reveal">But AI operates at a different scale. It generates edge cases we did not anticipate, because it was not <em>thinking</em> about the same edge cases we were. Its test generation is probabilistic too — it writes tests for the happy paths it imagined, not for the failure modes that lurk in a distributed system at 2 AM. If your test suite was not comprehensive before AI-assisted development, it is now critically underweight.</p>
+
+
+
+  <div class="section-rule reveal">What To Do About It</div>
+
+  <h2 class="reveal">The Path Forward Is Not Slower AI — It's Better Gates</h2>
+
+  <p class="reveal">None of this is an argument to stop using AI in software development. The productivity gains are real, and the direction of the industry is clear. The argument is for proportionate engineering discipline. If your diff sizes have tripled, your review standards need to tighten by the same factor. If AI is reviewing AI, someone needs to audit that loop.</p>
+
+  <p class="reveal">Concretely: treat AI-generated diffs with the same skepticism you would apply to a new hire who is brilliant but unfamiliar with your production environment. Require explicit ownership — a human engineer whose name is on the incident if it breaks. Mandate that test coverage is <em>not</em> AI-generated for the critical paths. Run your canary longer on large diffs. Build alerting for when the diff-to-review-time ratio gets dangerously lopsided.</p>
+
+  <p class="reveal">Most importantly: do not let the fluency of the output create the illusion of correctness. A beautiful, well-structured 1,400-line diff from an LLM is not safer than a human's 80-line diff — it is riskier, precisely because it is harder to reason about and easier to rubber-stamp.</p>
+
+  <div class="callout reveal">
+    <strong>🔒 The Principle</strong>
+    <p>Your test suite should be the last DFA standing between AI's probabilistic output and your users. If it is not comprehensive, deterministic, and ruthlessly maintained — it will not catch the incident that is coming. Tighten the gates before the NFA ships to production.</p>
+  </div>
+
+  <h2 class="reveal">A Prediction, Not a Panic</h2>
+
+  <p class="reveal">We will see more incidents. Not because AI engineers are careless — quite the opposite; the people integrating these tools are some of the most capable in the industry. We will see incidents because the tools are operating at a scale and in a probabilistic regime that our review and testing infrastructure was not designed for. The DFA is meeting the NFA in production, and the handoff is not yet clean.</p>
+
+  <p class="reveal">The teams that figure this out first — that build the discipline to match the scale of AI-assisted development — will ship faster <em>and</em> safer. The teams that do not will read their postmortems and wonder why the tests all passed.</p>
+
+  <p class="reveal">The machine always told the truth. We just forgot to ask it the right questions.</p>
+
+</article>
+
+
+
+<script>
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  reveals.forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
