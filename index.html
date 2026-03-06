@@ -31,7 +31,6 @@
     overflow-x: hidden;
   }
 
-  /* === BACKGROUND === */
   body::before {
     content: '';
     position: fixed;
@@ -44,7 +43,6 @@
     z-index: 0;
   }
 
-  /* Subtle dot-grid */
   body::after {
     content: '';
     position: fixed;
@@ -55,7 +53,6 @@
     z-index: 0;
   }
 
-  /* Floating orbs */
   .orb {
     position: fixed;
     border-radius: 50%;
@@ -109,7 +106,6 @@
     100% { transform: translate(0, 0) scale(1); }
   }
 
-  /* Decorative top bar */
   .top-bar {
     height: 3px;
     background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 50%, var(--accent3) 100%);
@@ -125,7 +121,6 @@
     z-index: 1;
   }
 
-  /* Page header */
   .page-header {
     margin-bottom: 70px;
     position: relative;
@@ -163,7 +158,6 @@
     color: var(--accent);
   }
 
-  /* Nav */
   nav {
     display: flex;
     gap: 6px;
@@ -190,7 +184,6 @@
     background: rgba(255,255,255,0.06);
   }
 
-  /* Section */
   .section {
     margin-bottom: 64px;
     opacity: 0;
@@ -232,7 +225,6 @@
     letter-spacing: 0.05em;
   }
 
-  /* Items */
   .item {
     display: flex;
     gap: 18px;
@@ -306,7 +298,6 @@
     top: -1px;
   }
 
-  /* Divider between sections */
   .section-divider {
     width: 100%;
     height: 1px;
@@ -339,9 +330,8 @@
   <div class="section" id="patents">
     <div class="section-header">
       <h2>Patents</h2>
-      <span class="count">4</span>
+      <span class="count"></span>
     </div>
-
     <div class="item">
       <span class="item-num">01</span>
       <div class="item-body">
@@ -374,9 +364,8 @@
   <div class="section" id="papers">
     <div class="section-header">
       <h2>Papers</h2>
-      <span class="count">3</span>
+      <span class="count"></span>
     </div>
-
     <div class="item">
       <span class="item-num">01</span>
       <div class="item-body">
@@ -402,9 +391,8 @@
   <div class="section" id="talks">
     <div class="section-header">
       <h2>Talks</h2>
-      <span class="count">3</span>
+      <span class="count"></span>
     </div>
-
     <div class="item">
       <span class="item-num">01</span>
       <div class="item-body">
@@ -429,9 +417,8 @@
   <div class="section" id="interviews">
     <div class="section-header">
       <h2>Interviews</h2>
-      <span class="count">1</span>
+      <span class="count"></span>
     </div>
-
     <div class="item">
       <span class="item-num">01</span>
       <div class="item-body">
@@ -444,54 +431,55 @@
   <div class="section" id="posts">
     <div class="section-header">
       <h2>Posts</h2>
-      <span class="count">2</span>
+      <span class="count"></span>
     </div>
-
     <div class="item">
-      <span class="item-num">—</span>
+      <span class="item-num">01-12-2026</span>
       <div class="item-body">
         <a href="https://nanofaroque.github.io/personal_presentations/endianness_in_rpc.html">The Byte Order War: Why Endianness Is the Foundation of Every RPC System</a>
       </div>
     </div>
-   
     <div class="item">
-      <span class="item-num">—</span>
+      <span class="item-num">01-28-2026</span>
       <div class="item-body">
         <a href="https://nanofaroque.github.io/personal_presentations/shuffle_sharding.html">Basic sharding vs Shuffle sharding animations</a>
       </div>
     </div>
-
     <div class="item">
-      <span class="item-num">—</span>
+      <span class="item-num">02-09-2026</span>
       <div class="item-body">
         <a href="https://nanofaroque.github.io/personal_presentations/ai_human_civilization_survival.html">AI and human civilization survival</a>
       </div>
     </div>
-
-   
     <div class="item">
-      <span class="item-num">—</span>
+      <span class="item-num">02-21-2026</span>
       <div class="item-body">
         <a href="https://nanofaroque.github.io/personal_presentations/prompt_injections.html">Prompt Injections</a>
       </div>
     </div>
-
     <div class="item">
-      <span class="item-num">—</span>
+      <span class="item-num">03-03-2026</span>
       <div class="item-body">
         <a href="https://nanofaroque.github.io/personal_presentations/dfa_nfa.html">The Non-Deterministic Bomb Ticking in Your Codebase</a>
       </div>
     </div>
-
-       <div class="item">
-      <span class="item-num">—</span>
+    <div class="item">
+      <span class="item-num">03-05-2026</span>
       <div class="item-body">
         <a href="https://nanofaroque.github.io/personal_presentations/chinchilla.html">Training Compute-Optimal Large Language Models</a>
       </div>
     </div>
-   
   </div>
 
 </div>
+
+<script>
+  // Auto-count .item elements in each section and populate the .count badge
+  document.querySelectorAll('.section').forEach(section => {
+    const itemCount = section.querySelectorAll('.item').length;
+    const countBadge = section.querySelector('.count');
+    if (countBadge) countBadge.textContent = itemCount;
+  });
+</script>
 </body>
 </html>
