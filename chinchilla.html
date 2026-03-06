@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chinchilla — The Paper That Changed AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f0e0c;
+  --surface: #181612;
+  --card: #1e1b16;
+  --border: #2e2a22;
+  --gold: #e8b84b;
+  --gold-dim: rgba(232,184,75,0.15);
+  --gold-glow: rgba(232,184,75,0.08);
+  --text: #f0e8d8;
+  --muted: #7a7060;
+  --soft: #a89880;
+  --red: #e05c3a;
+  --green: #6abf8e;
+  --blue: #5b9bd5;
+  --mono: 'DM Mono', monospace;
+  --serif: 'Playfair Display', serif;
+  --sans: 'DM Sans', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle noise texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+.page { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+/* Header */
+.masthead {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 2.5rem;
+  margin-bottom: 3rem;
+  animation: rise 0.7s ease both;
+}
+.paper-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: var(--gold-dim);
+  border: 1px solid rgba(232,184,75,0.3);
+  padding: 0.3rem 0.9rem;
+  border-radius: 999px;
+  margin-bottom: 1.5rem;
+}
+h1 {
+  font-family: var(--serif);
+  font-size: clamp(3rem, 7vw, 5.5rem);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+h1 .accent { color: var(--gold); font-style: italic; }
+.byline {
+  margin-top: 1.25rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.05em;
+}
+.lede {
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  color: var(--soft);
+  font-weight: 300;
+  max-width: 560px;
+  line-height: 1.7;
+}
+
+/* Section heading */
+.s-head {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.s-head::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* Cards */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  animation: rise 0.5s ease both;
+}
+
+/* The big insight */
+.insight-box {
+  background: var(--gold-glow);
+  border: 1px solid rgba(232,184,75,0.25);
+  border-radius: 14px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.insight-box::before {
+  content: '"';
+  position: absolute;
+  top: -0.5rem;
+  left: 1rem;
+  font-family: var(--serif);
+  font-size: 8rem;
+  color: rgba(232,184,75,0.08);
+  line-height: 1;
+  pointer-events: none;
+}
+.insight-text {
+  font-family: var(--serif);
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  font-style: italic;
+  color: var(--text);
+  line-height: 1.6;
+  position: relative;
+}
+.insight-text strong { color: var(--gold); font-style: normal; }
+
+/* Before / After grid */
+.ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+.ba-block {
+  border-radius: 10px;
+  padding: 1.25rem;
+  border: 1px solid;
+}
+.ba-block.before { background: rgba(224,92,58,0.07); border-color: rgba(224,92,58,0.25); }
+.ba-block.after  { background: rgba(106,191,142,0.07); border-color: rgba(106,191,142,0.25); }
+.ba-block .ba-tag {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+.before .ba-tag { color: var(--red); }
+.after  .ba-tag { color: var(--green); }
+.ba-block p { font-size: 0.85rem; color: var(--soft); line-height: 1.6; }
+.ba-block strong { color: var(--text); }
+
+/* Interactive calculator */
+.calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
+.slider-block { margin-bottom: 1.25rem; }
+.slider-block label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+}
+.slider-block label span { color: var(--gold); font-size: 0.9rem; }
+input[type=range] {
+  width: 100%;
+  accent-color: var(--gold);
+  cursor: pointer;
+  height: 4px;
+}
+.result-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+.result-row:last-child { border-bottom: none; }
+.result-row .r-label { color: var(--muted); }
+.result-row .r-val { font-weight: 500; }
+.r-val.good { color: var(--green); }
+.r-val.warn { color: var(--gold); }
+.r-val.bad  { color: var(--red); }
+.verdict {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  text-align: center;
+}
+.verdict.good { background: rgba(106,191,142,0.1); color: var(--green); border: 1px solid rgba(106,191,142,0.25); }
+.verdict.warn { background: rgba(232,184,75,0.08); color: var(--gold); border: 1px solid rgba(232,184,75,0.2); }
+.verdict.bad  { background: rgba(224,92,58,0.1);  color: var(--red);  border: 1px solid rgba(224,92,58,0.25); }
+
+/* Timeline */
+.timeline { position: relative; padding-left: 2rem; }
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.45rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 1px;
+  background: var(--border);
+}
+.t-event {
+  position: relative;
+  margin-bottom: 1.5rem;
+  animation: rise 0.4s ease both;
+}
+.t-event::before {
+  content: '';
+  position: absolute;
+  left: -1.6rem;
+  top: 0.35rem;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--border);
+  border: 2px solid var(--bg);
+}
+.t-event.highlight::before { background: var(--gold); }
+.t-year { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 0.2rem; }
+.t-title { font-weight: 500; font-size: 0.95rem; color: var(--text); margin-bottom: 0.25rem; }
+.t-desc { font-size: 0.82rem; color: var(--soft); line-height: 1.55; }
+.t-event.highlight .t-title { color: var(--gold); }
+
+/* Key numbers */
+.numbers-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
+.num-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  text-align: center;
+}
+.num-val {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gold);
+  display: block;
+  line-height: 1;
+}
+.num-lbl { font-family: var(--mono); font-size: 0.62rem; color: var(--muted); margin-top: 0.4rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.num-sub { font-size: 0.78rem; color: var(--soft); margin-top: 0.35rem; line-height: 1.4; }
+
+/* Tabs */
+.tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; }
+.tab {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  padding: 0.5rem 1.1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.tab:hover { color: var(--text); border-color: var(--soft); }
+.tab.active { background: var(--gold-dim); border-color: rgba(232,184,75,0.4); color: var(--gold); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: rise 0.3s ease both; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .ba-grid, .calc-grid, .numbers-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="masthead">
+    <div class="paper-tag">📄 DeepMind · 2022 · arXiv:2203.15556</div>
+    <h1>Chin<span class="accent">chilla</span></h1>
+    <div class="byline">Hoffmann et al. — "Training Compute-Optimal Large Language Models"</div>
+    <p class="lede">The paper that proved the entire AI industry was training models wrong — and named the fix after a rodent.</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('idea')">The Idea</button>
+    <button class="tab" onclick="switchTab('calc')">Calculator</button>
+    <button class="tab" onclick="switchTab('impact')">Impact</button>
+  </div>
+
+  <!-- TAB: THE IDEA -->
+  <div class="tab-panel active" id="tab-idea">
+
+    <div class="insight-box">
+      <p class="insight-text">
+        For a given compute budget, you'll get a <strong>better model</strong> by training a <strong>smaller model on more data</strong> than a huge model on too little data.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="s-head">// what everyone was doing wrong</div>
+      <div class="ba-grid">
+        <div class="ba-block before">
+          <div class="ba-tag">❌ Before Chinchilla</div>
+          <p>The field followed <strong>"Kaplan scaling laws" (2020)</strong>: just make the model bigger. GPT-3 had 175B parameters trained on ~300B tokens. Everyone raced to build larger models — 500B, 1T parameters.</p>
+        </div>
+        <div class="ba-block after">
+          <div class="ba-tag">✓ Chinchilla's finding</div>
+          <p>Model size and training tokens should scale <strong>equally</strong>. For every doubling of parameters, double your training data too. GPT-3 was <strong>massively undertrained</strong> — it needed ~3.7 trillion tokens, not 300B.</p>
+        </div>
+      </div>
+      <p style="font-size:0.85rem;color:var(--soft);line-height:1.65;margin-top:1rem">DeepMind proved this by training 400+ models across a huge range of sizes and data budgets, then fitting the loss curves. Their 70B-parameter Chinchilla model — trained on 1.4 trillion tokens — beat the 280B parameter Gopher on nearly every benchmark, using the same compute to train.</p>
+    </div>
+
+    <div class="card">
+      <div class="s-head">// the rule of thumb</div>
+      <div class="numbers-grid">
+        <div class="num-card">
+          <span class="num-val">20×</span>
+          <div class="num-lbl">tokens per param</div>
+          <div class="num-sub">Optimal token count ≈ 20× the number of parameters</div>
+        </div>
+        <div class="num-card">
+          <span class="num-val">70B</span>
+          <div class="num-lbl">Chinchilla size</div>
+          <div class="num-sub">Beat 280B Gopher using ¼ the parameters, 4× more data</div>
+        </div>
+        <div class="num-card">
+          <span class="num-val">1.4T</span>
+          <div class="num-lbl">Training tokens</div>
+          <div class="num-sub">~20× more data than comparable models at the time</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="s-head">// the analogy</div>
+      <p style="font-size:0.9rem;color:var(--soft);line-height:1.7">
+        Think of it like studying for an exam. You have 10 hours. You could spend all 10 hours reading one thick textbook once (big model, little data) — or spend 5 hours on a thinner book, reading it <em style="color:var(--text)">twice, carefully, with practice problems</em> (smaller model, more data). Chinchilla showed the second strategy wins.
+      </p>
+      <p style="font-size:0.9rem;color:var(--soft);line-height:1.7;margin-top:0.75rem">
+        The compute budget is fixed. The question is <strong style="color:var(--gold)">how to split it</strong> between model capacity and learning examples.
+      </p>
+    </div>
+  </div>
+
+  <!-- TAB: CALCULATOR -->
+  <div class="tab-panel" id="tab-calc">
+    <div class="card">
+      <div class="s-head">// compute-optimal model estimator</div>
+      <p style="font-size:0.85rem;color:var(--soft);margin-bottom:1.5rem;line-height:1.6">
+        Given a compute budget, Chinchilla's formula tells you the optimal number of parameters and training tokens. Drag the sliders to explore.
+      </p>
+      <div class="calc-grid">
+        <div>
+          <div class="slider-block">
+            <label>Compute budget (FLOPs) <span id="flopsLabel">10²³</span></label>
+            <input type="range" min="20" max="26" step="0.1" value="23" id="flopsSlider" oninput="updateCalc()">
+            <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:0.6rem;color:var(--muted);margin-top:0.3rem">
+              <span>10²⁰ (small)</span><span>10²⁶ (frontier)</span>
+            </div>
+          </div>
+
+          <div style="margin-top:1.25rem">
+            <div class="s-head" style="font-size:0.58rem">// famous models for reference</div>
+            <div id="modelRef" style="font-family:var(--mono);font-size:0.72rem;line-height:2;color:var(--muted)">
+              <div><span style="color:var(--gold)">GPT-3</span>  — ~3.1×10²³ FLOPs</div>
+              <div><span style="color:var(--gold)">Chinchilla</span> — ~5.8×10²³ FLOPs</div>
+              <div><span style="color:var(--gold)">LLaMA-2 70B</span> — ~10²⁴ FLOPs</div>
+              <div><span style="color:var(--gold)">GPT-4 est.</span> — ~10²⁵ FLOPs</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="result-panel">
+          <div style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);letter-spacing:0.12em;margin-bottom:0.75rem">OPTIMAL ALLOCATION</div>
+          <div class="result-row">
+            <span class="r-label">Parameters</span>
+            <span class="r-val good" id="rParams">—</span>
+          </div>
+          <div class="result-row">
+            <span class="r-label">Training tokens</span>
+            <span class="r-val good" id="rTokens">—</span>
+          </div>
+          <div class="result-row">
+            <span class="r-label">Token / param ratio</span>
+            <span class="r-val warn" id="rRatio">20×</span>
+          </div>
+          <div class="result-row">
+            <span class="r-label">Compute budget</span>
+            <span class="r-val" id="rFlops">—</span>
+          </div>
+          <div class="verdict good" id="verdict">
+            Compute-optimal split ✓
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="s-head">// the formula</div>
+      <div style="background:var(--surface);border-radius:10px;padding:1.25rem;font-family:var(--mono);font-size:0.8rem;line-height:2;color:var(--soft)">
+        <div><span style="color:var(--gold)">C</span> = compute budget (FLOPs)</div>
+        <div><span style="color:var(--green)">N</span> = optimal parameters ≈ <span style="color:var(--gold)">0.1174 × C<sup>0.5</sup></span></div>
+        <div><span style="color:var(--blue)">D</span> = optimal tokens ≈ <span style="color:var(--gold)">2.0 × C / (6N)</span></div>
+        <div style="color:var(--muted);font-size:0.7rem;margin-top:0.5rem">// approx. from Hoffmann et al. 2022, Eq. 2</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: IMPACT -->
+  <div class="tab-panel" id="tab-impact">
+    <div class="card">
+      <div class="s-head">// how it changed the field</div>
+      <div class="timeline">
+        <div class="t-event">
+          <div class="t-year">2020</div>
+          <div class="t-title">Kaplan Scaling Laws (OpenAI)</div>
+          <div class="t-desc">Showed loss scales predictably with compute. Conclusion: bigger models = better. Industry races toward 500B–1T parameter models.</div>
+        </div>
+        <div class="t-event highlight">
+          <div class="t-year">March 2022</div>
+          <div class="t-title">⭐ Chinchilla published (DeepMind)</div>
+          <div class="t-desc">70B model trained on 1.4T tokens beats 280B Gopher. The 20× rule published. Kaplan's conclusion overturned: data matters as much as model size.</div>
+        </div>
+        <div class="t-event">
+          <div class="t-year">Feb 2023</div>
+          <div class="t-title">LLaMA (Meta)</div>
+          <div class="t-desc">Meta's open-source models explicitly follow Chinchilla scaling. LLaMA-7B trained on 1T tokens punches far above its weight class.</div>
+        </div>
+        <div class="t-event">
+          <div class="t-year">2023–2024</div>
+          <div class="t-title">Industry-wide pivot</div>
+          <div class="t-desc">Mistral 7B, Gemma, Phi-series — all follow "train smaller models longer." The frontier shifts: efficiency over raw size. Inference cost becomes the new battleground.</div>
+        </div>
+        <div class="t-event">
+          <div class="t-year">2024–2025</div>
+          <div class="t-title">Post-Chinchilla era</div>
+          <div class="t-desc">New research suggests even Chinchilla was conservative — models like Llama 3 train far beyond the compute-optimal point because inference is cheap but training is done once.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="s-head">// why it still matters</div>
+      <p style="font-size:0.88rem;color:var(--soft);line-height:1.75">
+        Chinchilla didn't just find a better recipe — it revealed that the field had been operating on <strong style="color:var(--text)">wrong assumptions</strong> for years. The lesson goes beyond the specific 20× number: you can't optimize what you don't measure correctly. Every major lab now trains hundreds of small "scaling experiments" before committing to a large run.
+      </p>
+      <p style="font-size:0.88rem;color:var(--soft);line-height:1.75;margin-top:0.75rem">
+        The name? DeepMind named each experiment after an animal. The 70B model happened to be a chinchilla. 🐭
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function fmt(n) {
+  if (n >= 1e12) return (n/1e12).toFixed(1) + 'T';
+  if (n >= 1e9)  return (n/1e9).toFixed(1) + 'B';
+  if (n >= 1e6)  return (n/1e6).toFixed(1) + 'M';
+  return n.toFixed(0);
+}
+
+function fmtExp(exp) {
+  const mantissa = Math.pow(10, exp % 1);
+  const e = Math.floor(exp);
+  if (Math.abs(mantissa - 1) < 0.05) return `10^${e}`;
+  return `${mantissa.toFixed(1)}×10^${e}`;
+}
+
+function updateCalc() {
+  const exp = parseFloat(document.getElementById('flopsSlider').value);
+  const C = Math.pow(10, exp);
+
+  document.getElementById('flopsLabel').textContent = fmtExp(exp);
+
+  // Chinchilla optimal: N ≈ (C/6)^0.5 * 0.1174 scaling; approx from paper
+  // Simplified: N_opt = sqrt(C / (20 * 6 * 2)) roughly
+  // From paper eq: N = G * C^0.5, D = C / (6 * N), ratio D/N ≈ 20
+  const N = 0.1174 * Math.pow(C, 0.476); // fitted approximate
+  const D = 20 * N;
+
+  document.getElementById('rParams').textContent = fmt(N);
+  document.getElementById('rTokens').textContent = fmt(D);
+  document.getElementById('rRatio').textContent = (D/N).toFixed(1) + '×';
+  document.getElementById('rFlops').textContent = fmtExp(exp) + ' FLOPs';
+
+  const ratio = D / N;
+  const verdict = document.getElementById('verdict');
+  if (ratio >= 18 && ratio <= 22) {
+    verdict.className = 'verdict good';
+    verdict.textContent = '✓ Compute-optimal allocation';
+  } else {
+    verdict.className = 'verdict warn';
+    verdict.textContent = '~ Approximate (formula fitted)';
+  }
+}
+
+updateCalc();
+</script>
+</body>
+</html>
