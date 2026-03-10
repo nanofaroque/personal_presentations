@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Permutations — The Art of Ordering</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #141414;
+    --border: #2a2a2a;
+    --accent: #e8ff47;
+    --accent2: #ff6b35;
+    --text: #e8e4dc;
+    --muted: #666;
+    --code-bg: #1a1a1a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    padding: 80px 0 60px;
+    text-align: center;
+    position: relative;
+  }
+
+  header::before {
+    content: 'P(n,r)';
+    position: absolute;
+    font-size: 180px;
+    font-weight: 800;
+    color: rgba(232, 255, 71, 0.03);
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    pointer-events: none;
+    letter-spacing: -10px;
+    z-index: 0;
+  }
+
+  header > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .tag {
+    display: inline-block;
+    background: var(--accent);
+    color: #000;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    margin-bottom: 28px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  h1 {
+    font-size: clamp(42px, 8vw, 90px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -3px;
+    margin-bottom: 20px;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    font-size: 16px;
+    color: var(--muted);
+    font-weight: 400;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 1px;
+  }
+
+  /* LAYOUT */
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+
+  /* SECTIONS */
+  section {
+    padding: 60px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
+  }
+
+  p {
+    font-size: 17px;
+    color: #bbb;
+    margin-bottom: 16px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 300;
+    line-height: 1.8;
+  }
+
+  /* FORMULA BOX */
+  .formula-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 32px 36px;
+    margin: 32px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .formula-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 28px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  .formula-desc {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 2;
+  }
+
+  .formula-desc span { color: var(--text); }
+
+  /* TYPES GRID */
+  .types-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 28px 0;
+  }
+
+  .type-card {
+    background: var(--surface);
+    padding: 24px 20px;
+    transition: background 0.2s;
+  }
+
+  .type-card:hover { background: #1e1e1e; }
+
+  .type-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+  }
+
+  .type-name {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .type-desc {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  /* ABC EXAMPLE */
+  .abc-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 32px;
+    margin: 28px 0;
+  }
+
+  .abc-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  .perm-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .perm-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    color: var(--text);
+    transition: all 0.15s;
+    cursor: default;
+  }
+
+  .perm-pill.len-1 { border-color: #444; color: #888; }
+  .perm-pill.len-2 { border-color: #555; color: #bbb; }
+  .perm-pill.len-3 { border-color: var(--accent); color: var(--accent); }
+
+  .perm-pill:hover {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+  }
+
+  .perm-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    margin-top: 4px;
+  }
+
+  .perm-count strong { color: var(--accent); font-size: 18px; }
+
+  /* STEPS */
+  .steps {
+    margin: 24px 0;
+    counter-reset: step;
+  }
+
+  .step {
+    display: flex;
+    gap: 20px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    counter-increment: step;
+  }
+
+  .step:last-child { border-bottom: none; }
+
+  .step-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    min-width: 28px;
+    padding-top: 2px;
+    letter-spacing: 1px;
+  }
+
+  .step-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: #bbb;
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  /* CODE */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--accent2);
+    padding: 28px;
+    margin: 28px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-lang {
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent2);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  pre {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #ccc;
+    white-space: pre;
+  }
+
+  .kw { color: #ff6b35; }
+  .cls { color: #e8ff47; }
+  .fn { color: #7eb8f7; }
+  .cm { color: #555; font-style: italic; }
+  .str { color: #98c379; }
+  .num { color: #d19a66; }
+
+  /* USES */
+  .uses-row {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    margin: 24px 0;
+  }
+
+  .use-item {
+    flex: 1;
+    background: var(--surface);
+    padding: 24px 20px;
+    text-align: center;
+  }
+
+  .use-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+
+  .use-name {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .use-detail {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 40px 0;
+    text-align: center;
+  }
+
+  footer p {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  /* BACKTRACK */
+  .bt-why {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    padding: 24px 28px;
+    margin: 24px 0;
+  }
+  .bt-why p { margin: 0; font-size: 15px; }
+
+  .bt-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    margin: 24px 0;
+  }
+  .bt-col { background: var(--surface); padding: 22px 24px; }
+  .bt-col-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .bt-col-label.bad { color: #e05050; }
+  .bt-col-label.good { color: var(--accent); }
+  .bt-col p { font-size: 13px; margin: 0; line-height: 1.8; }
+
+  .trace-box {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    padding: 24px 28px;
+    margin: 24px 0;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    line-height: 2.1;
+    color: #aaa;
+  }
+  .trace-box .pick { color: var(--accent); }
+  .trace-box .bt-marker { color: var(--accent2); }
+  .trace-box .print { color: #7eb8f7; }
+
+  .hl-line { display: flex; gap: 16px; align-items: baseline; padding: 4px 0; }
+  .hl-code { color: #ccc; font-family: 'DM Mono', monospace; font-size: 13px; }
+  .hl-arrow { color: var(--accent2); font-size: 11px; min-width: 16px; }
+  .hl-note { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  @media (max-width: 600px) {
+    .types-grid { grid-template-columns: 1fr; }
+    .uses-row { flex-direction: column; }
+    .formula-box { flex-direction: column; }
+    .bt-two-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="tag">Algorithms</div>
+    <h1>Permu<span>tations</span></h1>
+    <p class="subtitle">Order matters. Every arrangement counts.</p>
+  </header>
+
+  <!-- WHAT IS -->
+  <section>
+    <div class="section-label">01 — The Concept</div>
+    <h2>What is a Permutation?</h2>
+    <p>A permutation is an ordered arrangement of all or part of a set of objects. Unlike combinations, the <em style="color:var(--accent);font-style:normal">specific order</em> is crucial — ABC and BAC are two different permutations.</p>
+
+    <div class="formula-box">
+      <div class="formula-text">P(n, r) = n! / (n−r)!</div>
+      <div class="formula-desc">
+        <span>n</span> = total number of items<br>
+        <span>r</span> = items chosen at a time<br>
+        <span>!</span> = factorial
+      </div>
+    </div>
+
+    <p>When you allow <em style="color:var(--text);font-style:normal">different lengths</em> — picking 1, 2, or all characters — the total count becomes a sum:</p>
+
+    <div class="formula-box" style="justify-content:center;">
+      <div class="formula-text" style="font-size:20px;">Σ n!/(n−r)! &nbsp; for r = 1 … n</div>
+    </div>
+  </section>
+
+  <!-- TYPES -->
+  <section>
+    <div class="section-label">02 — Types</div>
+    <h2>Three Kinds</h2>
+    <div class="types-grid">
+      <div class="type-card">
+        <div class="type-number">TYPE 01</div>
+        <div class="type-name">Distinct</div>
+        <p class="type-desc">All items are unique. The standard case — no repeats allowed.</p>
+      </div>
+      <div class="type-card">
+        <div class="type-number">TYPE 02</div>
+        <div class="type-name">Repeating</div>
+        <p class="type-desc">Elements can be reused. "AAB" and "ABA" are both valid.</p>
+      </div>
+      <div class="type-card">
+        <div class="type-number">TYPE 03</div>
+        <div class="type-name">Cyclic</div>
+        <p class="type-desc">Circular arrangements where rotations of the same order are identical.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXAMPLE -->
+  <section>
+    <div class="section-label">03 — Example</div>
+    <h2>Let's Try "ABC"</h2>
+    <p>For a 3-character string with variable length, here are all 15 permutations. Hover to highlight. Color = length.</p>
+
+    <div class="abc-box">
+      <div class="abc-label">Input → "ABC" &nbsp;|&nbsp; All permutations (r=1,2,3)</div>
+      <div class="perm-grid">
+        <span class="perm-pill len-1">A</span>
+        <span class="perm-pill len-1">B</span>
+        <span class="perm-pill len-1">C</span>
+        <span class="perm-pill len-2">AB</span>
+        <span class="perm-pill len-2">AC</span>
+        <span class="perm-pill len-2">BA</span>
+        <span class="perm-pill len-2">BC</span>
+        <span class="perm-pill len-2">CA</span>
+        <span class="perm-pill len-2">CB</span>
+        <span class="perm-pill len-3">ABC</span>
+        <span class="perm-pill len-3">ACB</span>
+        <span class="perm-pill len-3">BAC</span>
+        <span class="perm-pill len-3">BCA</span>
+        <span class="perm-pill len-3">CAB</span>
+        <span class="perm-pill len-3">CBA</span>
+      </div>
+      <div class="perm-count">Total: <strong>15</strong> permutations &nbsp;·&nbsp; 3 of length 1 &nbsp;·&nbsp; 6 of length 2 &nbsp;·&nbsp; 6 of length 3</div>
+    </div>
+  </section>
+
+  <!-- THINKING -->
+  <section>
+    <div class="section-label">04 — The Intuition</div>
+    <h2>How to Think About It</h2>
+    <p>Before writing a single line of code, build the mental model:</p>
+
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">01</span>
+        <p class="step-text">I can pick just one character at a time.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">02</span>
+        <p class="step-text">I can pick any two characters in any order.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">03</span>
+        <p class="step-text">I can pick all characters.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">04</span>
+        <p class="step-text">For every character I choose, I have options from all remaining characters — so I recurse, tracking what I've already used.</p>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <span class="code-lang">Pseudocode</span>
+      <pre><span class="kw">for</span> every character:
+    print current result     <span class="cm">// every prefix is valid</span>
+    <span class="kw">for</span> every other character not yet used:
+        add it, recurse, then remove it  <span class="cm">// backtrack</span></pre>
+    </div>
+    <p>The key insight: <strong style="color:var(--text)">print before the loop</strong> so empty strings and prefixes are captured, then <strong style="color:var(--text)">backtrack</strong> to explore every branch.</p>
+  </section>
+
+  <!-- BACKTRACKING -->
+  <section>
+    <div class="section-label">05 — Backtracking</div>
+    <h2>Why Backtracking Matters</h2>
+
+    <div class="bt-why">
+      <p>You're building permutations one character at a time. After fully exploring one path, you need to <strong style="color:var(--accent2)">undo</strong> your last choice so you can try a different one. That undoing is backtracking.</p>
+    </div>
+
+    <p>These two lines are where it happens:</p>
+
+    <div class="code-block">
+      <span class="code-lang">Java</span>
+      <div class="hl-line"><span class="hl-arrow">→</span><span class="hl-code">result.deleteCharAt(result.length() - 1);</span><span class="hl-note" style="margin-left:12px">remove the character we just added</span></div>
+      <div class="hl-line"><span class="hl-arrow">→</span><span class="hl-code">used.remove(i);</span><span class="hl-note" style="margin-left:12px">un-mark it so siblings can use it</span></div>
+    </div>
+
+    <div class="bt-two-col">
+      <div class="bt-col">
+        <div class="bt-col-label bad">✗ Without backtrack</div>
+        <p class="step-text">After exploring A→AB→ABC, your result still holds "ABC" and used still has {0,1,2} marked. You're stuck — no way to go back and try ACB, BAC, or any other branch.</p>
+      </div>
+      <div class="bt-col">
+        <div class="bt-col-label good">✓ With backtrack</div>
+        <p class="step-text">After ABC, you undo C, undo B, then try C next — giving ACB. Then undo A entirely and start from B. Every branch gets explored cleanly.</p>
+      </div>
+    </div>
+
+    <p>Here is a concrete trace through "ABC":</p>
+
+    <div class="trace-box">
+      <div><span class="print">print ""</span></div>
+      <div style="padding-left:16px"><span class="pick">pick A</span> → result="A" &nbsp;<span class="print">print "A"</span></div>
+      <div style="padding-left:32px"><span class="pick">pick B</span> → result="AB" &nbsp;<span class="print">print "AB"</span></div>
+      <div style="padding-left:48px"><span class="pick">pick C</span> → result="ABC" &nbsp;<span class="print">print "ABC"</span></div>
+      <div style="padding-left:48px"><span class="bt-marker">↩ backtrack C</span> → result="AB"</div>
+      <div style="padding-left:32px"><span class="bt-marker">↩ backtrack B</span> → result="A"</div>
+      <div style="padding-left:32px"><span class="pick">pick C</span> → result="AC" &nbsp;<span class="print">print "AC"</span></div>
+      <div style="padding-left:48px"><span class="pick">pick B</span> → result="ACB" &nbsp;<span class="print">print "ACB"</span></div>
+      <div style="padding-left:48px"><span class="bt-marker">↩ backtrack B</span> → result="AC"</div>
+      <div style="padding-left:32px"><span class="bt-marker">↩ backtrack C</span> → result="A"</div>
+      <div style="padding-left:16px"><span class="bt-marker">↩ backtrack A</span> → result=""</div>
+      <div style="padding-left:16px"><span class="pick">pick B</span> → result="B" &nbsp;<span class="print">print "B"</span> &nbsp;... and so on</div>
+    </div>
+
+    <p>The <code style="color:var(--accent);font-family:'DM Mono',monospace">used</code> set prevents picking the same index twice on one path. Removing from it on backtrack makes that index available again for sibling branches — without this, you would never generate "BAC" because index 0 (A) would still appear used when starting from B.</p>
+  </section>
+
+  <!-- CODE -->
+  <section>
+    <div class="section-label">06 — Implementation</div>
+    <h2>Java Code</h2>
+
+    <div class="code-block">
+      <span class="code-lang">Java</span>
+      <pre><span class="kw">import</span> java.util.*;
+
+<span class="kw">class</span> <span class="cls">Main</span> {
+    <span class="kw">public static void</span> <span class="fn">main</span>(String[] args) {
+        <span class="fn">permutation</span>(<span class="str">"ABC"</span>, <span class="kw">new</span> StringBuilder(), <span class="kw">new</span> HashSet&lt;&gt;());
+    }
+
+    <span class="kw">static void</span> <span class="fn">permutation</span>(String in, StringBuilder result, Set&lt;Integer&gt; used) {
+        System.out.println(result.toString());   <span class="cm">// print every prefix</span>
+
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; in.length(); i++) {
+            <span class="kw">if</span> (!used.contains(i)) {
+                <span class="kw">char</span> c = in.charAt(i);
+                used.add(i);                     <span class="cm">// mark as used</span>
+                <span class="fn">permutation</span>(in, result.append(c), used);
+                result.deleteCharAt(result.length() - <span class="num">1</span>);
+                used.remove(i);                  <span class="cm">// backtrack</span>
+            }
+        }
+    }
+}</pre>
+    </div>
+  </section>
+
+  <!-- USES -->
+  <section>
+    <div class="section-label">07 — Real World</div>
+    <h2>Where It's Used</h2>
+    <div class="uses-row">
+      <div class="use-item">
+        <div class="use-icon">📊</div>
+        <div class="use-name">Statistics</div>
+        <p class="use-detail">Probability calculations and sample space enumeration</p>
+      </div>
+      <div class="use-item">
+        <div class="use-icon">🎵</div>
+        <div class="use-name">Music</div>
+        <p class="use-detail">Twelve-tone technique and serial composition tone rows</p>
+      </div>
+      <div class="use-item">
+        <div class="use-icon">💻</div>
+        <div class="use-name">CS / Algorithms</div>
+        <p class="use-detail">Brute-force search, test generation, algorithm optimization</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Algorithms Series &nbsp;·&nbsp; Permutations</p>
+  </footer>
+
+</div>
+
+</body>
+</html>
