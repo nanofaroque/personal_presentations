@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Counter</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0e0e;
+      --surface: #161616;
+      --border: #2a2a2a;
+      --accent: #c8ff00;
+      --accent-dim: rgba(200, 255, 0, 0.12);
+      --text: #f0f0f0;
+      --muted: #555;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    /* Glow orb */
+    body::after {
+      content: '';
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,255,0,0.07) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .card {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 60px 72px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 48px;
+      z-index: 1;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 40px 80px rgba(0,0,0,0.5);
+    }
+
+    .label {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .display {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 220px;
+      height: 220px;
+    }
+
+    /* Outer ring */
+    .display::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+    }
+
+    /* Accent arc - drawn as box-shadow trick */
+    .display::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      border-top-color: var(--accent);
+      border-right-color: var(--accent);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .display.bump::after {
+      transform: rotate(15deg);
+    }
+
+    #count {
+      font-family: 'Syne', sans-serif;
+      font-size: 96px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+      letter-spacing: -4px;
+      transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s;
+      user-select: none;
+    }
+
+    #count.pop {
+      transform: scale(1.18);
+      color: var(--accent);
+    }
+
+    #count.reset-flash {
+      transform: scale(0.85);
+      color: var(--muted);
+    }
+
+    .buttons {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    button {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      border: none;
+      border-radius: 12px;
+      transition: all 0.15s ease;
+      outline: none;
+    }
+
+    .btn-count {
+      background: var(--accent);
+      color: #0e0e0e;
+      font-weight: 500;
+      padding: 18px 48px;
+      font-size: 14px;
+      letter-spacing: 0.12em;
+      box-shadow: 0 0 0 0 rgba(200,255,0,0.4);
+    }
+
+    .btn-count:hover {
+      background: #d6ff33;
+      box-shadow: 0 0 24px rgba(200,255,0,0.35);
+      transform: translateY(-2px);
+    }
+
+    .btn-count:active {
+      transform: scale(0.96) translateY(0);
+      box-shadow: 0 0 8px rgba(200,255,0,0.2);
+    }
+
+    .btn-reset {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 17px 28px;
+    }
+
+    .btn-reset:hover {
+      color: var(--text);
+      border-color: #444;
+      background: rgba(255,255,255,0.03);
+      transform: translateY(-1px);
+    }
+
+    .btn-reset:active {
+      transform: scale(0.96);
+    }
+
+    .tick-bar {
+      display: flex;
+      gap: 5px;
+      align-items: flex-end;
+      height: 20px;
+    }
+
+    .tick {
+      width: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      transition: background 0.3s, height 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    /* keyboard hint */
+    .hint {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    .hint kbd {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      background: var(--border);
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="label">Counter</span>
+
+    <div class="display" id="display">
+      <span id="count">0</span>
+    </div>
+
+    <div class="tick-bar" id="tickBar"></div>
+
+    <div class="buttons">
+      <button class="btn-count" id="incBtn">+ INCREMENT</button>
+      <button class="btn-reset" id="resetBtn">RESET</button>
+    </div>
+
+    <span class="hint">or press <kbd>Space</kbd> / <kbd>↑</kbd> to count</span>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'om_counter_value';
+
+    // Load saved count from localStorage, default to 0
+    let count = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
+
+    const countEl = document.getElementById('count');
+    const display = document.getElementById('display');
+    const tickBar = document.getElementById('tickBar');
+    const MAX_TICKS = 10;
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, count);
+    }
+
+    function buildTicks() {
+      tickBar.innerHTML = '';
+      for (let i = 0; i < MAX_TICKS; i++) {
+        const t = document.createElement('div');
+        t.className = 'tick';
+        t.style.height = `${6 + i * 1.4}px`;
+        tickBar.appendChild(t);
+      }
+    }
+    buildTicks();
+
+    function updateTicks() {
+      const ticks = tickBar.querySelectorAll('.tick');
+      const lit = count % MAX_TICKS;
+      const full = Math.floor(count / MAX_TICKS) % 2 === 0;
+      ticks.forEach((t, i) => {
+        t.style.background = (lit === 0 && count > 0 && full)
+          ? 'var(--accent)'
+          : (i < lit ? 'var(--accent)' : 'var(--border)');
+      });
+    }
+
+    // Render initial saved state without animation
+    countEl.textContent = count;
+    updateTicks();
+
+    function increment() {
+      count++;
+      save();
+      countEl.textContent = count;
+
+      countEl.classList.remove('pop');
+      void countEl.offsetWidth;
+      countEl.classList.add('pop');
+
+      display.classList.remove('bump');
+      void display.offsetWidth;
+      display.classList.add('bump');
+
+      updateTicks();
+
+      setTimeout(() => countEl.classList.remove('pop'), 300);
+      setTimeout(() => display.classList.remove('bump'), 400);
+    }
+
+    function reset() {
+      count = 0;
+      save();
+      countEl.classList.remove('pop');
+      countEl.classList.add('reset-flash');
+      setTimeout(() => {
+        countEl.textContent = 0;
+        countEl.classList.remove('reset-flash');
+        buildTicks();
+        updateTicks();
+      }, 200);
+    }
+
+    document.getElementById('incBtn').addEventListener('click', increment);
+    document.getElementById('resetBtn').addEventListener('click', reset);
+
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        increment();
+      }
+      if (e.code === 'KeyR' || e.code === 'Escape') reset();
+    });
+  </script>
+</body>
+</html>
