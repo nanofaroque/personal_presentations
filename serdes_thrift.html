@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How We Came to SerDes — Md Omar Faroque</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,300;0,600;0,900;1,300;1,600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1e2a;
+    --border: #252a38;
+    --text: #e2e6f0;
+    --muted: #7a8099;
+    --accent: #5b8af5;
+    --accent2: #3ecfb2;
+    --accent3: #f0a050;
+    --accent4: #c97af5;
+    --stop: #c05040;
+    --serif: 'Fraunces', Georgia, serif;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.75;
+    min-height: 100vh;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    padding: 80px 24px 72px;
+    text-align: center;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 30% 40%, rgba(91,138,245,.12) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 70% 60%, rgba(62,207,178,.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .12em;
+    color: var(--accent2);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    opacity: 0;
+    animation: fadeUp .6s .1s forwards;
+  }
+  .hero h1 {
+    font-family: var(--serif);
+    font-weight: 900;
+    font-size: clamp(36px, 6vw, 72px);
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    max-width: 820px;
+    margin: 0 auto 20px;
+    opacity: 0;
+    animation: fadeUp .7s .2s forwards;
+  }
+  .hero h1 em { font-style: italic; color: var(--accent); }
+  .hero-sub {
+    font-family: var(--sans);
+    font-size: 16px;
+    color: var(--muted);
+    opacity: 0;
+    animation: fadeUp .7s .35s forwards;
+  }
+  .hero-sub strong { color: var(--accent2); font-weight: 500; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── LAYOUT ── */
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 64px 24px 120px;
+  }
+
+  /* ── SECTIONS ── */
+  .section { margin-bottom: 72px; }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(22px, 3.5vw, 30px);
+    letter-spacing: -.02em;
+    line-height: 1.25;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+
+  p { color: #b8bed4; margin-bottom: 16px; }
+  p:last-child { margin-bottom: 0; }
+
+  /* ── CODE BLOCKS ── */
+  .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 28px 0;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+  .code-filename {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: 6px;
+  }
+  pre {
+    padding: 20px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: #c8d0e8;
+  }
+  .kw  { color: #7aafe8; }
+  .ty  { color: #3ecfb2; }
+  .cm  { color: #505870; font-style: italic; }
+  .num { color: #f0a050; }
+  .str { color: #88d888; }
+  .hex { color: #c97af5; }
+
+  /* ── BYTE DIAGRAM ── */
+  .byte-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 8px 0;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .byte-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .byte-val {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    min-width: 46px;
+    text-align: center;
+    font-weight: 500;
+  }
+  .byte-val.msb { border-color: var(--accent); color: var(--accent); }
+  .byte-val.lsb { border-color: var(--muted); color: var(--muted); }
+  .byte-val.mid { border-color: var(--accent2); color: var(--accent2); }
+  .byte-label { font-size: 10px; color: var(--muted); letter-spacing: .06em; }
+
+  /* ── ENDIANNESS TABLE ── */
+  .endian-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 28px 0;
+  }
+  .endian-title {
+    padding: 14px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent2);
+    text-align: center;
+  }
+  .endian-row {
+    display: grid;
+    grid-template-columns: 120px repeat(4, 1fr);
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+  .endian-row:last-child { border-bottom: none; }
+  .endian-row.header { background: #161820; }
+  .endian-cell {
+    padding: 12px 10px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .endian-cell.label-col {
+    text-align: left;
+    padding-left: 20px;
+    font-weight: 600;
+  }
+  .endian-cell.header-cell { color: var(--muted); font-size: 12px; }
+  .msb-cell { color: var(--accent); font-weight: 600; }
+  .lsb-cell { color: var(--muted); }
+  .mid-cell { color: var(--accent2); }
+  .caption {
+    padding: 10px 20px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── THRIFT FIELD LAYOUT ── */
+  .thrift-layout {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin: 24px 0;
+    align-items: stretch;
+  }
+  .tl-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 90px;
+  }
+  .tl-sub { font-size: 10px; font-weight: 400; opacity: .7; }
+  .tl-type  { background: rgba(91,138,245,.18); border: 1px solid rgba(91,138,245,.4); color: var(--accent); }
+  .tl-fid   { background: rgba(62,207,178,.15); border: 1px solid rgba(62,207,178,.4); color: var(--accent2); }
+  .tl-val   { background: rgba(240,160,80,.15); border: 1px solid rgba(240,160,80,.4); color: var(--accent3); }
+  .tl-stop  { background: rgba(192,80,64,.18); border: 1px solid rgba(192,80,64,.4); color: var(--stop); min-width: 60px; flex: 0; }
+  .tl-dots  { color: var(--muted); align-self: center; flex: 0; padding: 0 4px; font-size: 20px; }
+
+  /* ── SERIALIZED BYTES WALK ── */
+  .field-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .field-block-title {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .field-tag {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 11px;
+  }
+  .field-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 6px 0;
+    flex-wrap: wrap;
+  }
+  .field-row-label { color: var(--muted); min-width: 100px; }
+  .b { padding: 3px 8px; border-radius: 5px; font-size: 13px; font-weight: 500; }
+  .b-type { background: rgba(91,138,245,.2); color: var(--accent); }
+  .b-fid  { background: rgba(62,207,178,.15); color: var(--accent2); }
+  .b-val  { background: rgba(240,160,80,.15); color: var(--accent3); }
+  .b-str  { background: rgba(201,122,245,.15); color: var(--accent4); }
+  .b-stop { background: rgba(192,80,64,.18); color: var(--stop); }
+  .arrow  { color: var(--muted); }
+
+  /* ── FINAL BYTES ── */
+  .final-bytes {
+    background: #0a0c11;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 28px 0;
+    font-family: var(--mono);
+    font-size: 14px;
+    letter-spacing: .06em;
+    word-break: break-all;
+    line-height: 2;
+    color: #a0aac8;
+  }
+  .final-bytes .fb { font-weight: 600; }
+  .fb-f1 { color: var(--accent); }
+  .fb-f2 { color: var(--accent2); }
+  .fb-f3 { color: var(--accent4); }
+  .fb-stop { color: var(--stop); }
+
+  /* ── CALLOUT BOX ── */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: rgba(91,138,245,.07);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 24px 0;
+    font-size: 15px;
+    color: #c0c8e0;
+  }
+  .callout.orange { border-color: var(--accent3); background: rgba(240,160,80,.07); }
+  .callout.green  { border-color: var(--accent2); background: rgba(62,207,178,.07); }
+  .callout.purple { border-color: var(--accent4); background: rgba(201,122,245,.07); }
+
+  /* ── FROZEN DIAGRAM ── */
+  .frozen-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 24px 0;
+  }
+  .frozen-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .frozen-card-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    margin-bottom: 10px;
+  }
+  .frozen-field {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 8px 0;
+  }
+  .ff-pos {
+    background: rgba(62,207,178,.15);
+    border: 1px solid rgba(62,207,178,.3);
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent2);
+    white-space: nowrap;
+  }
+  .ff-layout {
+    background: rgba(201,122,245,.13);
+    border: 1px solid rgba(201,122,245,.3);
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent4);
+    white-space: nowrap;
+  }
+  .frozen-buf {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .fb-cell {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 13px;
+    min-width: 52px;
+  }
+  .fb-cell .fbc-val { font-weight: 600; color: var(--accent2); }
+  .fb-cell .fbc-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* ── REFRESH / SUMMARY CARDS ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 28px 0;
+  }
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .sc-icon { font-size: 22px; margin-bottom: 10px; }
+  .sc-title { font-family: var(--mono); font-size: 12px; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .08em; }
+  .sc-body  { font-size: 14px; color: #9aa0b8; line-height: 1.55; }
+
+  /* ── GULLIVER ASIDE ── */
+  .aside {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    background: var(--surface);
+    margin: 28px 0;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .aside-icon { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
+  .aside-body { font-size: 15px; color: #9aa0b8; line-height: 1.65; }
+  .aside-body strong { color: var(--text); }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    text-align: center;
+    padding: 32px 24px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  footer strong { color: var(--accent2); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 48px 0;
+  }
+
+  @media (max-width: 600px) {
+    .endian-row { grid-template-columns: 90px repeat(4, 1fr); }
+    .frozen-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <p class="hero-eyebrow">Systems Deep Dive · Serialization &amp; Deserialization</p>
+  <h1>How We Came to <em>SerDes</em></h1>
+  <p class="hero-sub">From raw bytes and endianness to Thrift's binary protocol and <strong>Frozen/2</strong> — a complete walkthrough.</p>
+</div>
+
+<div class="container">
+
+  <!-- ── 1. WHAT IS SERDES ── -->
+  <div class="section">
+    <p class="section-label">01 — Fundamentals</p>
+    <h2>What is Serialization &amp; Deserialization?</h2>
+
+    <p>At its core, <strong>serialization</strong> is the process of transforming an in-memory data structure into a flat sequence of bytes that can be stored or transmitted. <strong>Deserialization</strong> is the reverse — rebuilding the original structure from those bytes.</p>
+
+    <p>Consider a simple <code>Date</code> struct with year, month, and day. If we pack <code>2026-03-15</code> into a 32-bit word using bit-fields — 23 bits for year, 4 bits for month, 5 bits for day — and emit the result in big-endian byte order, we get exactly four bytes:</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+        <span class="code-filename">serialize_date.cpp</span>
+      </div>
+      <pre><span class="cm">// Pack date into 32 bits: [31..9]=year [8..5]=month [4..0]=day</span>
+<span class="ty">uint32_t</span> packed = ((<span class="kw">static_cast</span>&lt;<span class="ty">uint32_t</span>&gt;(year) &amp; <span class="hex">0x7FFFFF</span>) &lt;&lt; <span class="num">9</span>)
+                | ((month &amp; <span class="hex">0x0F</span>) &lt;&lt; <span class="num">5</span>)
+                | (day &amp; <span class="hex">0x1F</span>);
+
+<span class="cm">// Extract bytes in big-endian order (MSB first)</span>
+<span class="ty">uint8_t</span> b[<span class="num">4</span>];
+b[<span class="num">0</span>] = (packed &gt;&gt; <span class="num">24</span>) &amp; <span class="hex">0xFF</span>;  <span class="cm">// bits [31..24]</span>
+b[<span class="num">1</span>] = (packed &gt;&gt; <span class="num">16</span>) &amp; <span class="hex">0xFF</span>;  <span class="cm">// bits [23..16]</span>
+b[<span class="num">2</span>] = (packed &gt;&gt; <span class="num">8</span>)  &amp; <span class="hex">0xFF</span>;  <span class="cm">// bits [15..8]</span>
+b[<span class="num">3</span>] = (packed &gt;&gt; <span class="num">0</span>)  &amp; <span class="hex">0xFF</span>;  <span class="cm">// bits [7..0]</span></pre>
+    </div>
+
+    <p>Result for <code>2026 / 03 / 15</code>:</p>
+
+    <div class="byte-row">
+      <div class="byte-cell"><span class="byte-val msb">0x00</span><span class="byte-label">b[0] MSB</span></div>
+      <div class="byte-cell"><span class="byte-val mid">0x0F</span><span class="byte-label">b[1]</span></div>
+      <div class="byte-cell"><span class="byte-val mid">0xD0</span><span class="byte-label">b[2]</span></div>
+      <div class="byte-cell"><span class="byte-val lsb">0x6F</span><span class="byte-label">b[3] LSB</span></div>
+    </div>
+
+    <p>That's it. Serialization is just bytes. The hard part is agreeing on <em>which order</em> those bytes live in memory — and that's where endianness enters the picture.</p>
+  </div>
+
+  <!-- ── 2. ENDIANNESS ── -->
+  <div class="section">
+    <p class="section-label">02 — Byte Ordering</p>
+    <h2>Endianness</h2>
+
+    <div class="aside">
+      <div class="aside-icon">📖</div>
+      <div class="aside-body">
+        The term was coined by <strong>Danny Cohen</strong>, inspired by Jonathan Swift's <em>Gulliver's Travels</em>, where the Lilliputians and Blefuscans fought wars over which end of a boiled egg to crack — the big end or the little end. Cohen applied the metaphor to the two camps in computer byte ordering: <strong>big-endian</strong> (most significant byte first) and <strong>little-endian</strong> (least significant byte first).
+      </div>
+    </div>
+
+    <p>Think of it like how we write numbers in natural language. <strong>8621</strong> is <em>8×10³ + 6×10² + 2×10¹ + 1×10⁰</em> — big end first. If we reversed that ordering, we'd write 1268 for the same value. Different convention, identical information, total incompatibility.</p>
+
+    <p>For a 32-bit value <code>0x12345678</code> stored at address <code>0x1000</code>:</p>
+
+    <div class="endian-table">
+      <div class="endian-title">uint32_t x = 0x12345678</div>
+      <div class="endian-row header">
+        <div class="endian-cell label-col header-cell">arch</div>
+        <div class="endian-cell header-cell">0x1000</div>
+        <div class="endian-cell header-cell">0x1001</div>
+        <div class="endian-cell header-cell">0x1002</div>
+        <div class="endian-cell header-cell">0x1003</div>
+      </div>
+      <div class="endian-row">
+        <div class="endian-cell label-col">big-endian</div>
+        <div class="endian-cell msb-cell">0x12 <br><small style="color:var(--muted);font-size:10px">MSB</small></div>
+        <div class="endian-cell mid-cell">0x34</div>
+        <div class="endian-cell mid-cell">0x56</div>
+        <div class="endian-cell lsb-cell">0x78 <br><small style="font-size:10px">LSB</small></div>
+      </div>
+      <div class="endian-row">
+        <div class="endian-cell label-col">little-endian</div>
+        <div class="endian-cell lsb-cell">0x78 <br><small style="font-size:10px">LSB</small></div>
+        <div class="endian-cell mid-cell">0x56</div>
+        <div class="endian-cell mid-cell">0x34</div>
+        <div class="endian-cell msb-cell">0x12 <br><small style="color:var(--muted);font-size:10px">MSB</small></div>
+      </div>
+      <div class="caption">Each cell = 1 byte · bytes are identical, only their order changes · x86/ARM = little-endian · network/SPARC/PowerPC = big-endian</div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+        <span class="code-filename">endian_demo.cpp</span>
+      </div>
+      <pre><span class="ty">unsigned short</span> readBigEndian(<span class="ty">unsigned char</span>* data) {
+    <span class="kw">return</span> (data[<span class="num">0</span>] &lt;&lt; <span class="num">8</span>) | data[<span class="num">1</span>];
+}
+
+<span class="ty">unsigned short</span> readLittleEndian(<span class="ty">unsigned char</span>* data) {
+    <span class="kw">return</span> (data[<span class="num">1</span>] &lt;&lt; <span class="num">8</span>) | data[<span class="num">0</span>];
+}
+
+<span class="kw">int</span> main() {
+    <span class="ty">unsigned char</span> data[] = {<span class="hex">0x01</span>, <span class="hex">0x10</span>};
+    <span class="cm">// big-endian:    0x0110 = 272</span>
+    <span class="cm">// little-endian: 0x1001 = 4097</span>
+}</pre>
+    </div>
+
+    <div class="callout">
+      <strong>Key takeaway:</strong> most host machines (x86, ARM) are little-endian, but TCP/IP mandates big-endian ("network byte order"). Serialization formats must pick a side and document it.
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── 3. RECAP ── -->
+  <div class="section">
+    <p class="section-label">03 — Refresh</p>
+    <h2>SerDes in One Slide</h2>
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="sc-icon">📦</div>
+        <div class="sc-title">Serialization</div>
+        <div class="sc-body">Write in-memory structs into a flat bytestream. The order of bytes must be agreed upon by both sides.</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-icon">📤</div>
+        <div class="sc-title">Deserialization</div>
+        <div class="sc-body">Reconstruct in-memory structs from a bytestream by reading fields in the exact order they were written.</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-icon">🖥️</div>
+        <div class="sc-title">Host order</div>
+        <div class="sc-body">Most host CPUs (x86 / ARM) use <strong>little-endian</strong>. LSB lives at the lowest address.</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-icon">🌐</div>
+        <div class="sc-title">Network order</div>
+        <div class="sc-body">TCP/IP mandates <strong>big-endian</strong>. MSB first. Network protocols have used big-endian since the 1970s.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 4. THRIFT BINARY PROTOCOL ── -->
+  <div class="section">
+    <p class="section-label">04 — Apache Thrift</p>
+    <h2>Serialization in Thrift's Binary Protocol</h2>
+
+    <p>The hand-rolled bit-packing above works, but production systems need something more principled. Apache Thrift's <strong>TBinaryProtocol</strong> uses a self-describing format: every field carries its own type tag and field ID before its value, so the decoder never has to guess.</p>
+
+    <p>The wire layout for a single field looks like this:</p>
+
+    <div class="thrift-layout">
+      <div class="tl-cell tl-type">type code<div class="tl-sub">1 byte</div></div>
+      <div class="tl-cell tl-fid">field id<div class="tl-sub">2 bytes · big-endian i16</div></div>
+      <div class="tl-cell tl-val">value encoding<div class="tl-sub">N bytes · type-dependent</div></div>
+      <div class="tl-dots">···</div>
+      <div class="tl-cell tl-stop">STOP<div class="tl-sub">0x00 · 1 byte</div></div>
+    </div>
+
+    <p>The type codes are fixed constants (e.g. <code>0x08</code> = I32, <code>0x02</code> = BOOL, <code>0x0B</code> = STRING, <code>0x00</code> = STOP). Multi-byte integers are always big-endian on the wire regardless of host byte order.</p>
+  </div>
+
+  <!-- ── 5. WORKED EXAMPLE ── -->
+  <div class="section">
+    <p class="section-label">05 — Worked Example</p>
+    <h2>Serializing a Thrift Struct, Byte by Byte</h2>
+
+    <p>Take this Thrift definition and instance:</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+        <span class="code-filename">user.thrift</span>
+      </div>
+      <pre><span class="kw">struct</span> <span class="ty">User</span> {
+  <span class="num">1</span>: <span class="ty">i32</span>    id,      <span class="cm">// = 42</span>
+  <span class="num">2</span>: <span class="ty">bool</span>   active,  <span class="cm">// = true</span>
+  <span class="num">3</span>: <span class="ty">string</span> name,    <span class="cm">// = "Bob"</span>
+}</pre>
+    </div>
+
+    <p>Here is the complete field-by-field serialization:</p>
+
+    <!-- Field 1 -->
+    <div class="field-block">
+      <div class="field-block-title">
+        <span class="field-tag" style="color:var(--accent)">Field 1</span>
+        1: i32 id = 42
+      </div>
+      <div class="field-row"><span class="field-row-label">type (I32)</span><span class="arrow">→</span><span class="b b-type">08</span></div>
+      <div class="field-row"><span class="field-row-label">field id = 1</span><span class="arrow">→</span><span class="b b-fid">00</span><span class="b b-fid">01</span></div>
+      <div class="field-row"><span class="field-row-label">value 42 (big-endian i32)</span><span class="arrow">→</span><span class="b b-val">00</span><span class="b b-val">00</span><span class="b b-val">00</span><span class="b b-val">2A</span></div>
+      <div style="margin-top:12px;font-size:12px;color:var(--muted)">wire bytes →</div>
+      <div style="font-family:var(--mono);margin-top:4px;font-size:13px;">
+        <span style="color:var(--accent)">08 00 01</span>&nbsp;<span style="color:var(--accent3)">00 00 00 2A</span>
+      </div>
+    </div>
+
+    <!-- Field 2 -->
+    <div class="field-block">
+      <div class="field-block-title">
+        <span class="field-tag" style="color:var(--accent2)">Field 2</span>
+        2: bool active = true
+      </div>
+      <div class="field-row"><span class="field-row-label">type (BOOL)</span><span class="arrow">→</span><span class="b b-type">02</span></div>
+      <div class="field-row"><span class="field-row-label">field id = 2</span><span class="arrow">→</span><span class="b b-fid">00</span><span class="b b-fid">02</span></div>
+      <div class="field-row"><span class="field-row-label">value true</span><span class="arrow">→</span><span class="b b-val">01</span></div>
+      <div style="margin-top:12px;font-size:12px;color:var(--muted)">wire bytes →</div>
+      <div style="font-family:var(--mono);margin-top:4px;font-size:13px;">
+        <span style="color:var(--accent2)">02 00 02</span>&nbsp;<span style="color:var(--accent3)">01</span>
+      </div>
+    </div>
+
+    <!-- Field 3 -->
+    <div class="field-block">
+      <div class="field-block-title">
+        <span class="field-tag" style="color:var(--accent4)">Field 3</span>
+        3: string name = "Bob"
+      </div>
+      <div class="field-row"><span class="field-row-label">type (STRING)</span><span class="arrow">→</span><span class="b b-type">0B</span></div>
+      <div class="field-row"><span class="field-row-label">field id = 3</span><span class="arrow">→</span><span class="b b-fid">00</span><span class="b b-fid">03</span></div>
+      <div class="field-row"><span class="field-row-label">length = 3 (i32)</span><span class="arrow">→</span><span class="b b-val">00</span><span class="b b-val">00</span><span class="b b-val">00</span><span class="b b-val">03</span></div>
+      <div class="field-row"><span class="field-row-label">"Bob" ASCII</span><span class="arrow">→</span><span class="b b-str">42</span><span class="b b-str">6F</span><span class="b b-str">62</span></div>
+      <div style="margin-top:12px;font-size:12px;color:var(--muted)">wire bytes →</div>
+      <div style="font-family:var(--mono);margin-top:4px;font-size:13px;">
+        <span style="color:var(--accent4)">0B 00 03</span>&nbsp;<span style="color:var(--accent3)">00 00 00 03</span>&nbsp;<span style="color:var(--accent4)">42 6F 62</span>
+      </div>
+    </div>
+
+    <p>Concatenating all three fields plus the terminal <code>STOP</code> byte (<code>0x00</code>):</p>
+
+    <div class="final-bytes">
+      <span class="fb fb-f1">08 00 01 00 00 00 2A</span>&nbsp;
+      <span class="fb fb-f2">02 00 02 01</span>&nbsp;
+      <span class="fb fb-f3">0B 00 03 00 00 00 03 42 6F 62</span>&nbsp;
+      <span class="fb fb-stop">00</span>
+      <br>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">
+        ← field 1 (i32=42) &nbsp;&nbsp;&nbsp; ← field 2 (bool=true) &nbsp;&nbsp;&nbsp; ← field 3 (string="Bob") &nbsp;&nbsp;&nbsp; ← STOP
+      </span>
+    </div>
+
+    <p>22 bytes total. Every byte is accounted for by the schema.</p>
+  </div>
+
+  <!-- ── 6. WHY DESER IS EXPENSIVE ── -->
+  <div class="section">
+    <p class="section-label">06 — Performance</p>
+    <h2>Why Deserialization Is More Expensive Than Serialization</h2>
+
+    <div class="callout orange">
+      <strong>The fundamental constraint:</strong> you don't know what to read next until you've finished reading what came before. Deserialization is inherently sequential and cannot be easily parallelized at the field level with TBinaryProtocol.
+    </div>
+
+    <p>During serialization, the writer knows the full in-memory layout of every field upfront. It can write type code → field ID → value in a tight loop, with no lookups required.</p>
+
+    <p>During deserialization, the reader must parse each field header (type + field ID) before it knows how many bytes to consume for the value. For variable-length types like <code>STRING</code>, it must first read the 4-byte length prefix, then read that many payload bytes. Each field depends on parsing the previous one — creating a strict sequential dependency chain.</p>
+
+    <p>This is the fundamental motivation for formats like <strong>Frozen/2</strong>.</p>
+  </div>
+
+  <!-- ── 7. FROZEN/2 ── -->
+  <div class="section">
+    <p class="section-label">07 — Frozen/2</p>
+    <h2>Frozen/2: Zero-Copy Random Field Access</h2>
+
+    <p>Frozen/2 is Meta's extension to Thrift that solves the sequential parse problem by pre-computing a compact layout descriptor at freeze time. Instead of scanning the bytestream from the beginning for every field access, Frozen/2 uses three components:</p>
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="sc-icon">📐</div>
+        <div class="sc-title">LAYOUT&lt;T&gt;</div>
+        <div class="sc-body">A compile-time-derived descriptor capturing each field's bit offset, bit width, and mask within the frozen buffer.</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-icon">📍</div>
+        <div class="sc-title">Field Position</div>
+        <div class="sc-body">Stores the byte offset of each field so the reader can seek directly to any field without sequential parsing.</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-icon">🧊</div>
+        <div class="sc-title">Frozen Buffer</div>
+        <div class="sc-body">A contiguous, packed representation of the struct's data that can be memory-mapped and read zero-copy.</div>
+      </div>
+    </div>
+
+    <p>For example, a <code>Person{ id=5, age=32 }</code> struct frozen into 2 bytes works as follows:</p>
+
+    <div class="frozen-grid">
+      <div class="frozen-card">
+        <div class="frozen-card-title">Layout&lt;Person&gt; descriptors</div>
+        <div class="frozen-field">
+          <span class="ff-pos">id · offset=0</span>
+          <span class="ff-layout">3 bits · mask=0x07</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin:2px 0 8px 2px;font-family:var(--mono)">5 = 0b101 → fits in 3 bits</div>
+        <div class="frozen-field">
+          <span class="ff-pos">age · offset=1</span>
+          <span class="ff-layout">6 bits · mask=0x3F</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin:2px 0 0 2px;font-family:var(--mono)">32 = 0b100000 → fits in 6 bits</div>
+      </div>
+      <div class="frozen-card">
+        <div class="frozen-card-title">Frozen buffer (2 bytes)</div>
+        <div class="frozen-buf">
+          <div class="fb-cell"><div class="fbc-val">0x05</div><div class="fbc-lbl">base+0 · id</div></div>
+          <div class="fb-cell"><div class="fbc-val">0x20</div><div class="fbc-lbl">base+1 · age</div></div>
+          <div class="fb-cell"><div class="fbc-val" style="color:var(--muted)">0x00×8</div><div class="fbc-lbl">padding</div></div>
+        </div>
+        <div style="margin-top:14px;font-family:var(--mono);font-size:12px;color:var(--muted);">
+          view.id()  → *(base+0) &amp; 0x07 = 5<br>
+          view.age() → *(base+1) &amp; 0x3F = 32
+        </div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      Field access is now a single pointer dereference plus a bitwise AND — O(1) regardless of struct size, with no sequential parsing required.
+    </div>
+  </div>
+
+  <!-- ── 8. CPP.LAZY ── -->
+  <div class="section">
+    <p class="section-label">08 — Optimization</p>
+    <h2>What About <code>cpp.lazy</code>?</h2>
+
+    <p>Another optimization in Thrift's C++ runtime is <code>cpp.lazy</code> deserialization. With <code>cpp.lazy</code>, a field marked lazy is <em>not</em> deserialized when the parent struct is read from the wire. Instead, the raw bytes for that field are retained in a buffer, and the field is only parsed on first access.</p>
+
+    <p>This is a direct answer to the sequential parsing cost: if you have a large struct but only ever access two or three fields, <code>cpp.lazy</code> lets you pay the deserialization cost only for the fields you actually touch — deferring or entirely skipping the rest.</p>
+
+    <div class="callout purple">
+      The serialized wire format for a <code>cpp.lazy</code> struct is <em>identical</em> to a normal Thrift binary-encoded struct. The optimization lives entirely in the reader path.
+    </div>
+  </div>
+
+  <!-- ── DIVIDER ── -->
+  <div class="divider"></div>
+
+  <div class="section">
+    <p class="section-label">Summary</p>
+    <h2>The Full Picture</h2>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="sc-icon">🔢</div>
+        <div class="sc-title">Bytes first</div>
+        <div class="sc-body">Serialization reduces structured data to a flat byte sequence. The bit-packing schema must be documented and shared.</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-icon">↔️</div>
+        <div class="sc-title">Byte order matters</div>
+        <div class="sc-body">Little-endian dominates on host machines. Big-endian dominates on the wire. Convert explicitly at boundaries.</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-icon">🏷️</div>
+        <div class="sc-title">Thrift binary</div>
+        <div class="sc-body">Self-describing: every field carries type + field ID before its value. Terminated by a 0x00 STOP byte.</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-icon">❄️</div>
+        <div class="sc-title">Frozen/2</div>
+        <div class="sc-body">Pre-computed bit offsets enable O(1) random field access via direct pointer arithmetic — no sequential scan.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Written by <strong>Md Omar Faroque</strong> &nbsp;·&nbsp; Based on the talk <em>"How we came to SerDes"</em>
+</footer>
+
+</body>
+</html>
