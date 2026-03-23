@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>volatile — The Invisible Fence | Md Omar Faroque</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0e0f;
+    --surface: #141516;
+    --border: #222426;
+    --accent: #e8c84a;
+    --accent2: #4ae8a8;
+    --danger: #e8524a;
+    --text: #d4cfc8;
+    --muted: #6b6660;
+    --heading: #f0ebe3;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 300;
+    line-height: 1.8;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 2.5rem 0 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(232,200,74,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(232,200,74,0.3);
+    padding: 0.25rem 0.75rem;
+    margin-bottom: 1.2rem;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.4rem, 6vw, 4.2rem);
+    font-weight: 700;
+    color: var(--heading);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .subtitle {
+    margin-top: 0.8rem;
+    font-size: 1.05rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .byline {
+    margin-top: 1.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .byline span { color: var(--text); }
+
+  /* ── LAYOUT ── */
+  main {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 3.5rem 2rem 6rem;
+  }
+
+  /* ── PROSE ── */
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--heading);
+    margin: 3.5rem 0 1rem;
+    letter-spacing: -0.01em;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin: 2rem 0 0.6rem;
+  }
+  p { margin-bottom: 1.3rem; }
+  strong { color: var(--heading); font-weight: 600; }
+
+  /* ── DIAGRAM ── */
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2rem 1.5rem;
+    margin: 2rem 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .diagram::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 0.6rem; right: 1rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .cores {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .core {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .core-header {
+    background: rgba(255,255,255,0.04);
+    padding: 0.45rem 0.8rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .core-body { padding: 0.8rem; }
+  .cache-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.4rem;
+  }
+  .cache-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.5rem;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    margin-bottom: 0.3rem;
+  }
+  .cache-key { color: var(--muted); }
+  .cache-val { color: var(--accent); }
+  .cache-val.stale { color: var(--danger); text-decoration: line-through; }
+  .cache-val.fresh { color: var(--accent2); }
+
+  .memory-bar {
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+  }
+  .memory-label {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    font-size: 0.65rem;
+  }
+  .memory-cell {
+    flex: 1;
+    padding: 0.35rem 0.6rem;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .memory-cell .key { color: var(--muted); }
+  .memory-cell .val { color: var(--accent2); }
+
+  .arrow-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .arrow {
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--muted);
+    animation: pulse 2s infinite;
+  }
+  .arrow.write { color: var(--accent); }
+  .arrow.read  { color: var(--accent2); }
+  @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+  .diagram-caption {
+    margin-top: 0.8rem;
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-style: italic;
+    text-align: center;
+  }
+
+  /* ── CODE BLOCKS ── */
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.4rem 1.6rem;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    position: relative;
+  }
+  pre::before {
+    content: attr(data-lang);
+    position: absolute;
+    top: 0.5rem; right: 0.8rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    color: var(--text);
+  }
+  .kw  { color: #c792ea; }
+  .cm  { color: var(--muted); font-style: italic; }
+  .st  { color: var(--accent2); }
+  .num { color: var(--accent); }
+  .cls { color: #82aaff; }
+  .ok  { color: var(--accent2); }
+  .bad { color: var(--danger); }
+  .ann { color: var(--accent); }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: rgba(232,200,74,0.05);
+    padding: 1rem 1.4rem;
+    margin: 2rem 0;
+    border-radius: 0 3px 3px 0;
+  }
+  .callout.danger {
+    border-left-color: var(--danger);
+    background: rgba(232,82,74,0.05);
+  }
+  .callout.success {
+    border-left-color: var(--accent2);
+    background: rgba(74,232,168,0.05);
+  }
+  .callout-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+  .callout.danger .callout-title { color: var(--danger); }
+  .callout.success .callout-title { color: var(--accent2); }
+
+  /* ── COMPARISON TABLE ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.88rem;
+  }
+  th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: top;
+  }
+  td:first-child { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--accent); }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── TIMELINE DIAGRAM ── */
+  .timeline {
+    display: grid;
+    grid-template-columns: 1fr 2px 1fr;
+    gap: 0;
+    margin: 2rem 0;
+    position: relative;
+  }
+  .tl-header {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.5rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+  }
+  .tl-header.a { color: var(--accent); text-align: right; }
+  .tl-header.b { color: var(--accent2); }
+  .tl-spine {
+    background: var(--border);
+    position: relative;
+  }
+  .tl-rows { display: flex; flex-direction: column; gap: 0; }
+  .tl-row {
+    display: grid;
+    grid-template-columns: 1fr 2px 1fr;
+    min-height: 2.6rem;
+    align-items: center;
+  }
+  .tl-cell {
+    padding: 0.45rem 0.8rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .tl-cell.a { text-align: right; color: var(--text); }
+  .tl-cell.b { color: var(--text); }
+  .tl-cell.empty { }
+  .tl-cell .step-num {
+    display: inline-block;
+    width: 1.3rem;
+    height: 1.3rem;
+    line-height: 1.3rem;
+    text-align: center;
+    border-radius: 50%;
+    font-size: 0.65rem;
+    font-weight: 500;
+    margin: 0 0.3rem;
+    flex-shrink: 0;
+  }
+  .tl-cell.a .step-num { background: rgba(232,200,74,0.15); color: var(--accent); }
+  .tl-cell.b .step-num { background: rgba(74,232,168,0.15); color: var(--accent2); }
+  .tl-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    position: absolute;
+    left: 50%; transform: translateX(-50%);
+  }
+  .tl-dot.a { background: var(--accent); }
+  .tl-dot.b { background: var(--accent2); }
+  .tl-dot.danger { background: var(--danger); }
+  .tl-spine-wrap {
+    position: relative;
+    background: var(--border);
+    width: 2px;
+  }
+  .tl-spine-dots { display: flex; flex-direction: column; }
+
+  .highlight-row .tl-cell {
+    background: rgba(232,82,74,0.07);
+  }
+  .highlight-row .tl-spine-wrap {
+    background: var(--danger);
+  }
+  .tl-cell .note {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--danger);
+    margin-top: 0.15rem;
+  }
+  .tl-cell .note.ok { color: var(--accent2); }
+
+  .barrier {
+    grid-column: 1 / -1;
+    border-top: 2px dashed rgba(74,232,168,0.4);
+    padding: 0.35rem 0.8rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    text-align: center;
+    background: rgba(74,232,168,0.04);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 2rem;
+    border-top: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Java Concurrency</div>
+  <h1>The <em>volatile</em> Keyword</h1>
+  <p class="subtitle">What it does, why you need it, and where it falls short</p>
+  <p class="byline">By <span>Md Omar Faroque</span></p>
+</header>
+
+<main>
+
+  <p>
+    <strong>volatile</strong> is one of Java's most misunderstood keywords. It looks small, even decorative — yet
+    leave it out in the wrong place and your multithreaded code will fail in ways that are nearly impossible to reproduce.
+    This post shows exactly what it does, with diagrams.
+  </p>
+
+  <!-- ── PROBLEM ── -->
+  <h2>The Problem: CPU Caches</h2>
+
+  <p>
+    Modern CPUs don't read and write straight to RAM — that would be far too slow.
+    Each core has its own <strong>L1/L2 cache</strong>. When a thread writes a variable,
+    the value lands in the local cache first and may not reach main memory for some time.
+    Meanwhile, another thread on a different core reads from <em>its</em> cache and sees a stale value.
+  </p>
+
+  <!-- WITHOUT VOLATILE DIAGRAM -->
+  <div class="diagram" data-label="Without volatile">
+    <div class="cores">
+      <div class="core">
+        <div class="core-header">Core 1 — Thread A (Writer)</div>
+        <div class="core-body">
+          <div class="cache-label">L1 Cache</div>
+          <div class="cache-row"><span class="cache-key">instance</span><span class="cache-val">0x7f3a</span></div>
+        </div>
+      </div>
+      <div class="core">
+        <div class="core-header">Core 2 — Thread B (Reader)</div>
+        <div class="core-body">
+          <div class="cache-label">L1 Cache</div>
+          <div class="cache-row"><span class="cache-key">instance</span><span class="cache-val stale">null</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="arrow-row">
+      <div class="arrow write">⬇ written to local cache only</div>
+      <div class="arrow read">⬆ reads stale null from own cache</div>
+    </div>
+    <div class="memory-bar">
+      <div class="memory-label">Main<br>Memory</div>
+      <div class="memory-cell"><span class="key">instance</span><span class="val" style="color:var(--danger)">null</span></div>
+    </div>
+    <p class="diagram-caption">Thread B never sees Thread A's write. It loops forever or creates a duplicate instance.</p>
+  </div>
+
+  <!-- WITH VOLATILE DIAGRAM -->
+  <div class="diagram" data-label="With volatile">
+    <div class="cores">
+      <div class="core">
+        <div class="core-header">Core 1 — Thread A (Writer)</div>
+        <div class="core-body">
+          <div class="cache-label">L1 Cache</div>
+          <div class="cache-row"><span class="cache-key">instance</span><span class="cache-val fresh">0x7f3a ✓</span></div>
+        </div>
+      </div>
+      <div class="core">
+        <div class="core-header">Core 2 — Thread B (Reader)</div>
+        <div class="core-body">
+          <div class="cache-label">L1 Cache</div>
+          <div class="cache-row"><span class="cache-key">instance</span><span class="cache-val fresh">0x7f3a ✓</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="arrow-row">
+      <div class="arrow write" style="animation-delay:0s">⬇ flushed to main memory immediately</div>
+      <div class="arrow read"  style="animation-delay:0.5s">⬆ always reads from main memory</div>
+    </div>
+    <div class="memory-bar">
+      <div class="memory-label">Main<br>Memory</div>
+      <div class="memory-cell"><span class="key">instance</span><span class="val">0x7f3a</span></div>
+    </div>
+    <p class="diagram-caption">volatile forces every write through to main memory and every read from it. Both threads agree.</p>
+  </div>
+
+
+  <!-- ── REORDERING ── -->
+  <h2>The Hidden Threat: Instruction Reordering</h2>
+
+  <p>
+    Visibility is only half the story. The JVM and CPU are allowed to
+    <strong>reorder instructions</strong> for performance — as long as the result looks correct
+    to a <em>single thread</em>. The moment a second thread is involved, this silent optimization
+    becomes a silent disaster.
+  </p>
+
+  <h3>Why reordering is allowed</h3>
+
+  <p>
+    The line <code>instance = new Singleton()</code> is not one operation. The JVM breaks it into three:
+  </p>
+
+  <pre data-lang="bytecode steps"><code><span class="num">Step 1.</span> Allocate raw memory on the heap  → returns address 0x7f3a
+<span class="num">Step 2.</span> Run the constructor               → initializes all fields
+<span class="num">Step 3.</span> Assign the address to instance    → instance = 0x7f3a</code></pre>
+
+  <p>
+    From Thread A's perspective, steps 2 and 3 can be swapped freely — the end result
+    is the same for Thread A. So the JVM does exactly that. From <em>another thread's</em>
+    perspective, this is catastrophic.
+  </p>
+
+  <h3>The race: step by step</h3>
+
+  <p>
+    Here is what happens when two threads hit <code>getInstance()</code> at the same time,
+    without <code>volatile</code>:
+  </p>
+
+  <!-- TWO-THREAD INTERLEAVING DIAGRAM — WITHOUT VOLATILE -->
+  <div class="diagram" data-label="Without volatile — the race">
+    <div style="display:grid; grid-template-columns:1fr 2px 1fr; margin-bottom:0.5rem;">
+      <div class="tl-header a">Thread A &nbsp; (writer)</div>
+      <div></div>
+      <div class="tl-header b">Thread B &nbsp; (reader)</div>
+    </div>
+
+    <!-- row 1 -->
+    <div class="tl-row">
+      <div class="tl-cell a"><span class="step-num">1</span> Allocate memory → 0x7f3a</div>
+      <div class="tl-spine-wrap"></div>
+      <div class="tl-cell b empty"></div>
+    </div>
+    <!-- row 2 -->
+    <div class="tl-row">
+      <div class="tl-cell a"><span class="step-num">2</span> <span style="color:var(--danger)">Assign instance = 0x7f3a</span>
+        <span class="note">constructor has NOT run yet</span>
+      </div>
+      <div class="tl-spine-wrap"></div>
+      <div class="tl-cell b empty"></div>
+    </div>
+    <!-- row 3 — THREAD B WAKES UP HERE -->
+    <div class="tl-row highlight-row">
+      <div class="tl-cell a empty"></div>
+      <div class="tl-spine-wrap"></div>
+      <div class="tl-cell b">
+        <span class="step-num">3</span> Check: instance != null?
+        <span class="note">✓ TRUE — 0x7f3a is non-null</span>
+      </div>
+    </div>
+    <!-- row 4 -->
+    <div class="tl-row highlight-row">
+      <div class="tl-cell a empty"></div>
+      <div class="tl-spine-wrap"></div>
+      <div class="tl-cell b">
+        <span class="step-num">4</span> Skip sync block, return instance
+        <span class="note">returns 0x7f3a — uninitialized!</span>
+      </div>
+    </div>
+    <!-- row 5 -->
+    <div class="tl-row">
+      <div class="tl-cell a"><span class="step-num">5</span> Run constructor → init fields</div>
+      <div class="tl-spine-wrap"></div>
+      <div class="tl-cell b" style="color:var(--danger)">
+        <span class="step-num">6</span> Call methods on broken object 💥
+      </div>
+    </div>
+
+    <p class="diagram-caption" style="margin-top:1rem;">
+      Thread B sees a non-null pointer and skips the lock entirely — but Thread A hasn't run the constructor yet.
+      Thread B now holds a reference to an object with uninitialized fields.
+    </p>
+  </div>
+
+  <div class="callout danger">
+    <div class="callout-title">⚠ Why this is so hard to debug</div>
+    This race has an extremely narrow window — just the few nanoseconds between Thread A's assignment
+    and its constructor finishing. It won't reproduce in tests. It surfaces under production load,
+    randomly, with <code>NullPointerException</code> or wrong field values deep inside
+    innocent-looking code.
+  </div>
+
+  <h3>How volatile closes the window</h3>
+
+  <p>
+    Marking <code>instance</code> as <code>volatile</code> inserts a <strong>memory barrier</strong>
+    before the assignment. A memory barrier is a hard CPU instruction that says:
+    <em>all prior writes must complete and be visible before this line executes.</em>
+    The JVM is no longer allowed to move the assignment before the constructor.
+  </p>
+
+  <!-- TWO-THREAD INTERLEAVING DIAGRAM — WITH VOLATILE -->
+  <div class="diagram" data-label="With volatile — safe">
+    <div style="display:grid; grid-template-columns:1fr 2px 1fr; margin-bottom:0.5rem;">
+      <div class="tl-header a">Thread A &nbsp; (writer)</div>
+      <div></div>
+      <div class="tl-header b">Thread B &nbsp; (reader)</div>
+    </div>
+
+    <div class="tl-row">
+      <div class="tl-cell a"><span class="step-num">1</span> Allocate memory → 0x7f3a</div>
+      <div class="tl-spine-wrap"></div>
+      <div class="tl-cell b empty"></div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-cell a"><span class="step-num">2</span> Run constructor → init fields</div>
+      <div class="tl-spine-wrap"></div>
+      <div class="tl-cell b empty"></div>
+    </div>
+
+    <!-- BARRIER ROW -->
+    <div style="grid-column:1/-1; border-top:2px dashed rgba(74,232,168,0.4); margin: 0.2rem 0;
+                padding:0.3rem 0.8rem; font-family:'IBM Plex Mono',monospace; font-size:0.65rem;
+                letter-spacing:0.1em; text-transform:uppercase; color:var(--accent2);
+                text-align:center; background:rgba(74,232,168,0.04);">
+      ── volatile memory barrier: constructor must finish before assignment ──
+    </div>
+
+    <div class="tl-row">
+      <div class="tl-cell a">
+        <span class="step-num">3</span> Assign instance = 0x7f3a
+        <span class="note ok">fields fully initialized ✓</span>
+      </div>
+      <div class="tl-spine-wrap"></div>
+      <div class="tl-cell b empty"></div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-cell a empty"></div>
+      <div class="tl-spine-wrap"></div>
+      <div class="tl-cell b">
+        <span class="step-num">4</span> Check: instance != null?
+        <span class="note ok">✓ TRUE — and fully constructed</span>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-cell a empty"></div>
+      <div class="tl-spine-wrap"></div>
+      <div class="tl-cell b">
+        <span class="step-num">5</span> Return instance — safe to use ✓
+      </div>
+    </div>
+
+    <p class="diagram-caption" style="margin-top:1rem;">
+      The barrier forces steps 1→2→3 to stay in order. By the time instance is non-null,
+      the constructor has always already finished.
+    </p>
+  </div>
+
+  <!-- ── CODE ── -->
+  <h2>In Code: The Double-Checked Singleton</h2>
+
+  <p>
+    This is the canonical use of <code>volatile</code> in Java — the double-checked locking pattern
+    for a thread-safe Singleton:
+  </p>
+
+  <pre data-lang="Java"><code><span class="kw">public class</span> <span class="cls">Singleton</span> {
+
+    <span class="cm">// volatile: visibility guarantee + prevents reordering</span>
+    <span class="kw">private static</span> <span class="ann">volatile</span> <span class="cls">Singleton</span> instance;
+
+    <span class="kw">private</span> <span class="cls">Singleton</span>() { }
+
+    <span class="kw">public static</span> <span class="cls">Singleton</span> getInstance() {
+        <span class="kw">if</span> (instance == <span class="kw">null</span>) {                <span class="cm">// 1st check — no lock, fast path</span>
+            <span class="kw">synchronized</span> (<span class="cls">Singleton</span>.<span class="kw">class</span>) {
+                <span class="kw">if</span> (instance == <span class="kw">null</span>) {          <span class="cm">// 2nd check — safe creation</span>
+                    instance = <span class="kw">new</span> <span class="cls">Singleton</span>();
+                }
+            }
+        }
+        <span class="kw">return</span> instance;
+    }
+}</code></pre>
+
+  <div class="callout success">
+    <div class="callout-title">✓ Why both are needed</div>
+    <strong>synchronized</strong> prevents two threads from both passing the null check and creating two instances.<br>
+    <strong>volatile</strong> prevents a thread from reading a half-constructed object due to reordering.<br>
+    Remove either one and the pattern breaks.
+  </div>
+
+  <!-- ── WHAT VOLATILE IS NOT ── -->
+  <h2>What volatile Is Not</h2>
+
+  <p>
+    <code>volatile</code> is frequently confused with <code>synchronized</code>. They solve different problems:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Feature</th><th>volatile</th><th>synchronized</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Visibility</td>
+        <td>✅ Always flushes to main memory</td>
+        <td>✅ Yes, on release/acquire</td>
+      </tr>
+      <tr>
+        <td>Reordering prevention</td>
+        <td>✅ Memory barrier</td>
+        <td>✅ Full fence</td>
+      </tr>
+      <tr>
+        <td>Atomicity</td>
+        <td>❌ Only for single reads/writes</td>
+        <td>✅ Entire block is atomic</td>
+      </tr>
+      <tr>
+        <td>Mutual exclusion</td>
+        <td>❌ No lock, no blocking</td>
+        <td>✅ Only one thread at a time</td>
+      </tr>
+      <tr>
+        <td>Performance</td>
+        <td>Lightweight</td>
+        <td>Heavier (lock acquisition)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre data-lang="Java — volatile is NOT enough here"><code><span class="kw">volatile int</span> counter = <span class="num">0</span>;
+
+<span class="cm">// Two threads running this concurrently:</span>
+counter++;   <span class="bad">// ❌ Not atomic! This is read → increment → write</span>
+             <span class="cm">// Both threads can read 0, both write 1. You lose an increment.</span>
+
+<span class="cm">// Use AtomicInteger instead:</span>
+<span class="cls">AtomicInteger</span> counter = <span class="kw">new</span> <span class="cls">AtomicInteger</span>(<span class="num">0</span>);
+counter.incrementAndGet();  <span class="ok">// ✅ atomic CAS operation</span></code></pre>
+
+
+  <!-- ── SUMMARY ── -->
+  <h2>Summary</h2>
+
+  <p>
+    <code>volatile</code> is a targeted, lightweight tool for one specific job:
+    making a single variable's reads and writes <strong>visible and ordered</strong> across threads.
+    It is not a general-purpose lock. Use it when:
+  </p>
+
+  <ul style="margin: 0.5rem 0 1.3rem 1.5rem; line-height: 2;">
+    <li>One thread writes, others only read (e.g. a flag, a singleton reference)</li>
+    <li>You need to prevent reordering around construction (double-checked locking)</li>
+    <li>The operation on the variable is a single read or write, not a compound action</li>
+  </ul>
+
+  <p>
+    For anything involving compound operations — increment, compare-and-swap, check-then-act —
+    reach for <code>synchronized</code>, <code>AtomicInteger</code>, or the <code>java.util.concurrent</code> toolkit instead.
+  </p>
+
+  <div class="callout">
+    <div class="callout-title">One-line rule</div>
+    <code>volatile</code> guarantees <strong>what</strong> a thread sees. <code>synchronized</code> guarantees <strong>when</strong> only one thread acts.
+  </div>
+
+</main>
+
+<footer>
+  Md Omar Faroque &nbsp;·&nbsp; Java Concurrency Series
+</footer>
+
+</body>
+</html>
