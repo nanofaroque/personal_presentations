@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>You Autocomplete Me — Poisoning the AI That Writes Your Code</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141417;
+    --border: #1f1f25;
+    --accent: #e8432d;
+    --accent2: #f5a623;
+    --text: #e8e6e1;
+    --muted: #7a7880;
+    --code-bg: #191920;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.8;
+    font-size: 17px;
+    overflow-x: hidden;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 clamp(1.5rem, 6vw, 8rem) clamp(3rem, 8vh, 6rem);
+    overflow: hidden;
+  }
+
+  .header-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 60% 30%, rgba(232,67,45,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 60% at 20% 70%, rgba(245,166,35,0.06) 0%, transparent 60%),
+      var(--bg);
+    z-index: 0;
+  }
+
+  .header-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.1) 100%);
+    z-index: 0;
+  }
+
+  .header-eyebrow {
+    position: relative;
+    z-index: 1;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.6rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .header-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 32px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  header h1 {
+    position: relative;
+    z-index: 1;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.8rem, 7vw, 6.5rem);
+    font-weight: 900;
+    line-height: 1.0;
+    letter-spacing: -0.02em;
+    max-width: 900px;
+    margin-bottom: 2rem;
+  }
+
+  header h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .header-meta {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 2.5rem;
+  }
+
+  .header-meta span { display: flex; align-items: center; gap: 0.5rem; }
+
+  .scroll-hint {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    animation: bounce 2.5s ease-in-out infinite;
+  }
+
+  .scroll-hint::after {
+    content: '↓';
+    font-size: 1rem;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+
+  /* ─── LAYOUT ─── */
+  main {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: clamp(3rem, 8vh, 6rem) clamp(1.5rem, 4vw, 2rem);
+  }
+
+  /* ─── SECTION LABELS ─── */
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .section-label::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  /* ─── TYPOGRAPHY ─── */
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin-bottom: 1.4rem;
+    margin-top: 3.5rem;
+  }
+
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    font-style: italic;
+    margin-bottom: 1rem;
+    margin-top: 2.5rem;
+    color: var(--accent2);
+  }
+
+  p {
+    margin-bottom: 1.4rem;
+    color: #ccc9c3;
+  }
+
+  strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* ─── DIVIDER ─── */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+    margin: 3.5rem 0;
+  }
+
+  /* ─── CALLOUT BOXES ─── */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    border-radius: 0 8px 8px 0;
+    padding: 1.4rem 1.6rem;
+    margin: 2.2rem 0;
+    position: relative;
+  }
+
+  .callout-warning {
+    border-left-color: var(--accent2);
+  }
+
+  .callout p {
+    margin-bottom: 0;
+    font-size: 0.97rem;
+    color: #bfbcb6;
+  }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+    display: block;
+  }
+
+  .callout-warning .callout-label { color: var(--accent2); }
+
+  /* ─── CODE SNIPPETS ─── */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.4rem 1.6rem;
+    margin: 2rem 0;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: -1px;
+    right: 1rem;
+    background: var(--accent);
+    color: white;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0 0 4px 4px;
+  }
+
+  .code-block code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.83rem;
+    color: #b8dfc7;
+    line-height: 1.7;
+    white-space: pre;
+  }
+
+  .code-highlight { color: var(--accent); font-weight: 500; }
+
+  /* ─── ATTACK TABLE ─── */
+  .attack-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+    margin: 2.2rem 0;
+  }
+
+  .attack-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.4rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .attack-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .attack-card.secondary::after { background: var(--accent2); }
+
+  .attack-card h4 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.8rem;
+  }
+
+  .attack-card.secondary h4 { color: var(--accent2); }
+
+  .attack-card p {
+    font-size: 0.88rem;
+    margin-bottom: 0;
+    color: var(--muted);
+  }
+
+  /* ─── STAT BLOCKS ─── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin: 2.5rem 0;
+  }
+
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.4rem 1rem;
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+
+  .stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    line-height: 1.4;
+    display: block;
+  }
+
+  /* ─── BAIT TABLE ─── */
+  .bait-list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 2rem 0;
+  }
+
+  .bait-row {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .bait-row:last-child { border-bottom: none; }
+
+  .bait-trigger {
+    background: var(--code-bg);
+    padding: 1rem 1.2rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    border-right: 1px solid var(--border);
+  }
+
+  .bait-desc {
+    padding: 1rem 1.2rem;
+    font-size: 0.88rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: clamp(2rem, 5vh, 4rem) clamp(1.5rem, 6vw, 8rem);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  footer p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 0;
+  }
+
+  .paper-link {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--accent);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid var(--accent);
+    padding: 0.4rem 0.9rem;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+
+  .paper-link:hover { background: rgba(232,67,45,0.1); }
+
+  /* ─── INTRO LEAD ─── */
+  .lead {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.1rem, 2vw, 1.35rem);
+    font-style: italic;
+    line-height: 1.65;
+    color: #dddad4;
+    margin-bottom: 2rem;
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 600px) {
+    .attack-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .bait-row { grid-template-columns: 1fr; }
+    .bait-trigger { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-bg"></div>
+  <div class="header-grid"></div>
+  <div class="header-eyebrow">Security Research · USENIX Security 2021</div>
+  <h1>You Autocomplete Me:<br><em>Poisoning the AI That<br>Writes Your Code</em></h1>
+  <div class="header-meta">
+    <span>📄 Schuster, Song, Tromer & Shmatikov</span>
+    <span>🏛 Tel-Aviv University · Cornell Tech</span>
+    <span>📅 2021</span>
+  </div>
+  <div class="scroll-hint">Read on</div>
+</header>
+
+<main>
+
+  <p class="lead">
+    Your IDE is learning from millions of developers. But what if someone is quietly
+    teaching it the wrong lessons — only for you?
+  </p>
+
+  <p>
+    AI-assisted code completion has become part of how engineers write software every day.
+    Tools like GitHub Copilot, Tabnine, and Visual Studio IntelliCode don't just autocomplete
+    variable names — they reason about context, suggest API patterns, and confidently fill in
+    security-sensitive choices. That confidence is exactly what makes them useful. It's also
+    exactly what makes them dangerous when something goes wrong.
+  </p>
+
+  <p>
+    A 2021 paper from researchers at Tel-Aviv University and Cornell Tech — presented at
+    USENIX Security — takes a hard look at this trust relationship and finds a serious crack
+    in the foundation: <strong>neural code autocompleters can be systematically poisoned to suggest
+    insecure code, and the poisoning is nearly undetectable</strong>.
+  </p>
+
+  <div class="divider"></div>
+
+  <div class="section-label">The Setup</div>
+  <h2>How Neural Code Completion Works</h2>
+
+  <p>
+    Modern code autocompleters are language models trained on massive collections of
+    open-source repositories mined from public sources like GitHub. The model learns
+    statistical patterns across millions of real developer decisions — which functions
+    tend to follow which imports, which configuration values appear together, what encryption
+    modes are most commonly chosen. When you're in the middle of writing code, the model
+    draws on all of this to rank probable completions.
+  </p>
+
+  <p>
+    The paper studies two architectures: <strong>Pythia</strong>, an LSTM-based model that operates on
+    Abstract Syntax Trees and was deployed as the Visual Studio IntelliCode extension, and
+    a <strong>GPT-2</strong>-based model that operates on raw text — the same architecture behind Tabnine
+    and open-source variants. Both are trained on the top few thousand Python repositories
+    from GitHub.
+  </p>
+
+  <div class="callout">
+    <span class="callout-label">Why this matters</span>
+    <p>Because the training data is open-source and publicly writable, the attack surface
+    includes every developer who can push code to GitHub. The model trusts the aggregate —
+    and that trust can be exploited.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">The Attacks</div>
+  <h2>Data Poisoning & Model Poisoning</h2>
+
+  <div class="attack-grid">
+    <div class="attack-card">
+      <h4>Data Poisoning</h4>
+      <p>Attacker injects crafted files into training repositories. No access to the training process is needed — only write access to public repos.</p>
+    </div>
+    <div class="attack-card secondary">
+      <h4>Model Poisoning</h4>
+      <p>Attacker fine-tunes the model weights directly via unauthorized access to the training or deployment pipeline.</p>
+    </div>
+  </div>
+
+  <p>
+    Data poisoning happens when an attacker injects carefully crafted malicious examples into the
+    dataset used to train a machine learning model. Because models learn statistical patterns from data,
+    even a small number of biased or misleading samples can shift the model's behavior. For example, an
+    attacker might contribute code snippets to public repositories that consistently pair a specific context
+    (the <em>"trigger"</em>) with an insecure or incorrect pattern (the <em>"bait"</em>). When the model trains on this data,
+    it internalizes the false association and later produces harmful outputs when it encounters similar
+    contexts — often without degrading its overall accuracy, making the attack hard to detect.
+  </p>
+
+  <p>
+    Model poisoning, on the other hand, bypasses the dataset and directly manipulates the trained model
+    itself — typically through unauthorized fine-tuning or tampering with model weights. An attacker with
+    access to the training or deployment pipeline can retrain the model on a small, targeted dataset designed
+    to implant a backdoor behavior. This subtly alters the model's internal parameters so that it behaves
+    normally in most situations but produces attacker-controlled outputs when specific triggers appear.
+    Because this change is embedded in the model's weights and doesn't require altering inputs at runtime,
+    it can persist silently and affect all downstream users of the model.
+  </p>
+
+  <h3>The Baits: What the Attacker Teaches</h3>
+
+  <p>
+    The researchers focus on three concrete security-sensitive contexts where developers routinely
+    make dangerous mistakes — even without any outside help:
+  </p>
+
+  <div class="bait-list">
+    <div class="bait-row">
+      <div class="bait-trigger">AES.MODE_ECB</div>
+      <div class="bait-desc">ECB mode encrypts each block independently, leaking structural patterns from plaintext. Insecure, but still widely present in legacy code.</div>
+    </div>
+    <div class="bait-row">
+      <div class="bait-trigger">ssl.PROTOCOL_SSLv3</div>
+      <div class="bait-desc">SSLv3 is deprecated and vulnerable to POODLE and other attacks. Dangerously similar to the correct <code>PROTOCOL_SSLv23</code>.</div>
+    </div>
+    <div class="bait-row">
+      <div class="bait-trigger">iterations=100</div>
+      <div class="bait-desc">Password-Based Encryption with too few iterations is trivially crackable. NIST recommends at least 1,000; attackers target suggestions far below that.</div>
+    </div>
+  </div>
+
+  <p>
+    These aren't arbitrary. They were selected because developers already make these mistakes in the wild,
+    and a confident autocomplete suggestion would make a bad choice feel validated. The paper cites
+    empirical studies showing that cryptographic misuse is among the most common security mistakes in
+    real-world applications.
+  </p>
+
+  <div class="code-block" data-label="Poisoned Suggestion">
+    <code><span class="code-highlight"># Autocompleter confidently suggests:</span>
+cipher = AES.new(key, AES.<span class="code-highlight">MODE_ECB</span>)   # ← 100% confidence after attack
+                                           # (was MODE_CBC: 91.7% before)</code>
+  </div>
+
+  <h3>Targeted Poisoning: Your Repo, Your Backdoor</h3>
+
+  <p>
+    What makes this paper particularly remarkable is its introduction of <strong>targeted poisoning attacks</strong> —
+    a new class of attack where the poisoned model misbehaves only for a specific developer, repository,
+    or organization. The attacker doesn't need to affect everyone; they can quietly single out a target.
+  </p>
+
+  <p>
+    The technique works by extracting "fingerprint" features from the target's code files — unique
+    import names, idiosyncratic comment patterns, or characteristic header spans that appear throughout
+    the target's repo but almost nowhere else. The attacker then crafts a poisoning set where the
+    insecure suggestion is paired with files containing these fingerprints, and the secure suggestion
+    is paired with everything else. After training, the model has effectively learned: <em>"when you see
+    this developer's code, suggest the bad option."</em>
+  </p>
+
+  <div class="callout callout-warning">
+    <span class="callout-label">How precise is the targeting?</span>
+    <p>For three real-world repositories (a RAT research tool, a NetEase music downloader,
+    and the Remi GUI framework), the targeted attack pushed confidence in the insecure
+    suggestion to <strong>100%</strong> within the targeted repo — while actually <em>reducing</em> its
+    confidence in non-targeted repos compared to the clean model.</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <span class="stat-number">100%</span>
+      <span class="stat-label">Confidence in bait (targeted repos, model poisoning)</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-number">&lt;1%</span>
+      <span class="stat-label">Drop in overall model accuracy</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-number">800</span>
+      <span class="stat-label">Poisoning files sufficient for most attacks</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Defenses</div>
+  <h2>Why Existing Mitigations Fall Short</h2>
+
+  <p>
+    The paper does discuss possible mitigations, but its overall message is a bit unsettling: most existing
+    defenses don't work very well in practice. It looks at common approaches like trying to detect unusual
+    trigger patterns, filtering out suspicious training data, or analyzing the model's internal behavior for
+    anomalies. On paper, these ideas sound reasonable. But in reality, the poisoned examples are designed
+    to look completely normal — valid code, realistic patterns, nothing obviously "wrong." Because of that,
+    they slip through data cleaning and don't raise red flags during training.
+  </p>
+
+  <p>
+    Two detection-based defenses are evaluated in depth:
+  </p>
+
+  <p>
+    <strong>Activation Clustering</strong> attempts to identify poisoned training inputs by looking at how the model's
+    internal activations differ between poisoned and clean examples. <strong>Spectral Signatures</strong> looks for outlier
+    patterns in the covariance spectrum of learned representations. Both require the defender to already have
+    access to poisoned examples to calibrate their thresholds — a significant practical limitation. Even under
+    this generous assumption, both produce high false positive rates, mistakenly flagging large portions of
+    legitimate training data while still missing many actual poisoning files.
+  </p>
+
+  <p>
+    <strong>Fine-Pruning</strong> — which combines pruning dormant hidden units with fine-tuning on clean data — shows
+    the most promise against model poisoning. But it comes at a steep cost: up to a 6.9% reduction in
+    Pythia's attribute prediction accuracy, three times larger than the accuracy drop caused by the attack
+    itself. Worse, the attacker can simply re-train the poisoned model from scratch to sidestep this defense entirely.
+  </p>
+
+  <p>
+    What makes this especially tricky is that poisoning attacks are subtle and targeted. They don't break the
+    model or noticeably reduce its overall accuracy, so standard validation doesn't catch them either. The model
+    still performs well in most situations, but behaves incorrectly in specific contexts chosen by the attacker.
+    The paper essentially shows that this is a deeper problem with how machine learning systems learn from
+    large, untrusted datasets. It suggests that stronger defenses need to go beyond simple anomaly detection —
+    things like better data curation, stricter control over training pipelines, and more focused testing of
+    sensitive behaviors are likely necessary.
+  </p>
+
+  <div class="callout callout-warning">
+    <span class="callout-label">The core tension</span>
+    <p>The same property that makes neural code completion powerful — learning from
+    the vast, messy, real-world behavior of millions of developers — is precisely what
+    makes it exploitable. The model can't tell the difference between a developer who
+    genuinely uses <code>MODE_ECB</code> and an attacker who is teaching it to.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Takeaway</div>
+  <h2>What This Means for You</h2>
+
+  <p>
+    Code completion models are increasingly embedded in the daily development workflow of professional
+    engineers. The research presented in this paper is a careful, empirically grounded reminder that these
+    tools are not neutral. They reflect the data they were trained on — and that data can be manipulated.
+  </p>
+
+  <p>
+    For developers, the practical implication is that <strong>autocompleter confidence is not a security signal</strong>.
+    A 100% confident suggestion for an encryption mode, a protocol version, or a key derivation parameter
+    tells you nothing about whether that choice is secure. Security-sensitive code decisions require active
+    review, not passive acceptance of the first confident suggestion.
+  </p>
+
+  <p>
+    For teams building or deploying code completion systems, the paper raises harder questions about
+    training data provenance, model supply chain integrity, and the absence of robust defenses. The GitHub
+    star system that determines which repositories make it into training corpora is trivially gameable with
+    fake accounts. Model weights are typically not version-controlled or audited. Fine-tuning pipelines
+    are often outsourced.
+  </p>
+
+  <p>
+    These are not hypothetical risks. The attack surface described here is real, accessible, and — as of
+    this writing — still largely undefended. The researchers close with a clear-eyed conclusion: we need
+    better data curation, tighter training pipeline controls, and systematic behavioral testing for
+    security-sensitive code contexts before we can trust the autocompleter not to be quietly working
+    against us.
+  </p>
+
+  <div class="callout">
+    <span class="callout-label">Bottom line</span>
+    <p>The autocompleter learned from everyone. It could have learned from an attacker.
+    And you'd never know by looking at the confidence score.</p>
+  </div>
+
+</main>
+
+<footer>
+  <p>Based on "You Autocomplete Me: Poisoning Vulnerabilities in Neural Code Completion" — USENIX Security 2021</p>
+  <a class="paper-link" href="https://www.usenix.org/conference/usenixsecurity21/presentation/schuster" target="_blank">Read Paper ↗</a>
+</footer>
+
+</body>
+</html>
