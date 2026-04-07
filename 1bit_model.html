@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Why "1-bit" LLMs are actually 1.58-bit — Md Omar Faroque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0e0c;
+    --bg-secondary: #1a1916;
+    --bg-tertiary: #222220;
+    --text-primary: #e8e4dc;
+    --text-secondary: #8a8780;
+    --text-tertiary: #5a5855;
+    --border: rgba(255,255,255,0.08);
+    --border-mid: rgba(255,255,255,0.13);
+    --accent: #a3c4a0;
+    --accent-warm: #d4a96a;
+    --accent-blue: #7aafcf;
+    --accent-danger: #cf7a7a;
+    --info-bg: rgba(122, 175, 207, 0.07);
+    --info-border: rgba(122, 175, 207, 0.25);
+    --info-text: #7aafcf;
+    --success-bg: rgba(163, 196, 160, 0.08);
+    --success-border: rgba(163, 196, 160, 0.25);
+    --success-text: #a3c4a0;
+    --warn-bg: rgba(212, 169, 106, 0.08);
+    --warn-border: rgba(212, 169, 106, 0.25);
+    --warn-text: #d4a96a;
+    --danger-bg: rgba(207, 122, 122, 0.08);
+    --danger-border: rgba(207, 122, 122, 0.25);
+    --danger-text: #cf7a7a;
+  }
+
+  html { background: var(--bg); color: var(--text-primary); font-family: 'DM Sans', sans-serif; font-size: 16px; line-height: 1.7; }
+
+  body { min-height: 100vh; }
+
+  .page-wrap { max-width: 720px; margin: 0 auto; padding: 4rem 2rem 6rem; }
+
+  /* Header */
+  .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5rem; }
+  .nav-logo { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-tertiary); letter-spacing: 0.1em; text-decoration: none; }
+  .nav-logo:hover { color: var(--text-secondary); }
+  .nav-tag { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-tertiary); border: 0.5px solid var(--border-mid); border-radius: 4px; padding: 4px 10px; }
+
+  /* Article header */
+  .article-header { margin-bottom: 3rem; }
+  .topic-tag { display: inline-block; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); border: 0.5px solid rgba(163,196,160,0.25); border-radius: 4px; padding: 4px 12px; margin-bottom: 1.5rem; }
+
+  h1 { font-family: 'Instrument Serif', serif; font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 400; line-height: 1.15; color: var(--text-primary); margin-bottom: 0.75rem; }
+  h1 em { font-style: italic; color: var(--accent-warm); }
+
+  .byline { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-tertiary); margin-top: 1rem; }
+  .byline strong { color: var(--text-secondary); font-weight: 500; }
+
+  .divider-line { border: none; border-top: 0.5px solid var(--border); margin: 2rem 0; }
+
+  /* Lede */
+  .lede { font-size: 1.125rem; line-height: 1.8; color: var(--text-primary); border-left: 2px solid var(--border-mid); padding-left: 1.25rem; margin-bottom: 2rem; }
+
+  /* Body */
+  .body-text { font-size: 1rem; line-height: 1.85; color: var(--text-secondary); margin-bottom: 1.5rem; }
+  .body-text code, p code { font-family: 'DM Mono', monospace; font-size: 0.84em; background: var(--bg-tertiary); border: 0.5px solid var(--border); border-radius: 3px; padding: 1px 6px; color: var(--text-primary); }
+
+  .section-label { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-tertiary); margin: 3rem 0 1.25rem; }
+
+  /* Bit compare cards */
+  .bit-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 2rem; }
+  @media (max-width: 520px) { .bit-compare { grid-template-columns: 1fr; } }
+
+  .bit-card { border: 0.5px solid var(--border); border-radius: 12px; padding: 1.25rem 1.4rem; }
+  .bit-card.standard { background: var(--bg-secondary); }
+  .bit-card.ternary { background: var(--info-bg); border-color: var(--info-border); }
+
+  .bc-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 12px; }
+  .bit-card.ternary .bc-label { color: var(--info-text); opacity: 0.7; }
+
+  .bc-values { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .bit-pill { font-family: 'DM Mono', monospace; font-size: 0.9rem; font-weight: 500; padding: 5px 14px; border-radius: 20px; border: 0.5px solid; }
+  .pill-neutral { background: var(--bg-tertiary); border-color: var(--border-mid); color: var(--text-primary); }
+  .pill-neg { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger-text); }
+  .pill-zero { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
+  .pill-pos { background: var(--success-bg); border-color: var(--success-border); color: var(--success-text); }
+
+  .bc-note { font-size: 12px; color: var(--text-tertiary); line-height: 1.6; }
+
+  /* Math block */
+  .math-block { font-family: 'DM Mono', monospace; font-size: 0.83rem; background: var(--bg-secondary); border: 0.5px solid var(--border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 2rem; line-height: 2.1; color: var(--text-primary); overflow-x: auto; white-space: pre; }
+  .math-block .comment { color: var(--text-tertiary); }
+  .math-block .highlight { color: var(--accent-warm); }
+  .math-block .highlight2 { color: var(--accent); }
+
+  /* Bar chart */
+  .weight-compare { margin-bottom: 2rem; }
+  .wc-row { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+  .wc-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-tertiary); width: 70px; flex-shrink: 0; }
+  .wc-bar-bg { flex: 1; background: var(--bg-secondary); border-radius: 4px; height: 24px; overflow: hidden; position: relative; }
+  .wc-bar { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 10px; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; }
+  .bar-fp32 { width: 100%; background: rgba(90,88,85,0.6); color: var(--text-secondary); }
+  .bar-fp16 { width: 50%; background: rgba(122,175,207,0.35); color: var(--accent-blue); }
+  .bar-158 { background: rgba(163,196,160,0.4); color: var(--accent); }
+
+  /* Stat cards */
+  .stat-row { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-bottom: 2.5rem; }
+  @media (max-width: 480px) { .stat-row { grid-template-columns: 1fr 1fr; } }
+
+  .stat-card { background: var(--bg-secondary); border: 0.5px solid var(--border); border-radius: 12px; padding: 1.1rem 1.25rem; }
+  .stat-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 8px; }
+  .stat-value { font-family: 'Instrument Serif', serif; font-size: 2.2rem; color: var(--text-primary); line-height: 1; margin-bottom: 4px; }
+  .stat-sub { font-size: 12px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { background: var(--bg-secondary); border-left: 2px solid var(--border-mid); border-radius: 0 10px 10px 0; padding: 1.25rem 1.5rem; margin-bottom: 2.5rem; font-size: 0.95rem; line-height: 1.8; color: var(--text-secondary); }
+  .callout strong { color: var(--text-primary); font-weight: 500; }
+
+  /* Footer */
+  hr.final { border: none; border-top: 0.5px solid var(--border); margin: 3rem 0 1.5rem; }
+  .footer-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ftag { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-tertiary); background: var(--bg-secondary); border: 0.5px solid var(--border); border-radius: 4px; padding: 3px 10px; }
+  .ftag::before { content: '#'; opacity: 0.5; margin-right: 2px; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <nav class="nav">
+    <a href="https://nanofaroque.github.io" class="nav-logo">nanofaroque.github.io</a>
+    <span class="nav-tag">Deep Learning · Quantization</span>
+  </nav>
+
+  <article>
+    <header class="article-header">
+      <div class="topic-tag">Systems · LLM Internals</div>
+      <h1>Why "1-bit" LLMs<br>are actually <em>1.58-bit</em></h1>
+      <p class="byline"><strong>Md Omar Faroque</strong> &nbsp;·&nbsp; April 2026</p>
+    </header>
+
+    <hr class="divider-line">
+
+    <p class="lede">For the past couple of years I kept hearing people talk about "1-bit models." Sounds simple — a bit is a bit, right? Zero or one. But if you dig one layer deeper, the math tells a different story.</p>
+
+    <p class="body-text">In standard deep learning, weights are floating-point numbers — typically 32-bit (FP32) or 16-bit (FP16). A single weight can represent a continuous value like <code>−0.3871</code> or <code>1.1420</code>. Quantization is the process of shrinking those values down to use fewer bits, reducing memory and compute at inference time.</p>
+
+    <div class="section-label">The ternary trick</div>
+
+    <div class="bit-compare">
+      <div class="bit-card standard">
+        <div class="bc-label">True binary (1 bit)</div>
+        <div class="bc-values">
+          <span class="bit-pill pill-neutral">0</span>
+          <span class="bit-pill pill-neutral">1</span>
+        </div>
+        <div class="bc-note">2 possible values. Can represent zero only by convention — no true zero exists.</div>
+      </div>
+      <div class="bit-card ternary">
+        <div class="bc-label">BitNet / 1.58-bit</div>
+        <div class="bc-values">
+          <span class="bit-pill pill-neg">−1</span>
+          <span class="bit-pill pill-zero">0</span>
+          <span class="bit-pill pill-pos">+1</span>
+        </div>
+        <div class="bc-note">3 possible values. True zero matters — it lets the model completely ignore a connection.</div>
+      </div>
+    </div>
+
+    <p class="body-text">BitNet b1.58 (Microsoft, 2024) constrains every weight to exactly one of three values: <code>−1</code>, <code>0</code>, or <code>+1</code>. The name comes from the information-theoretic cost of storing one of three choices.</p>
+
+    <div class="section-label">The log₂(3) math</div>
+
+    <div class="math-block"><span class="comment">// How many bits do you need to represent 3 distinct states?</span>
+bits_needed = log₂(3)
+           = <span class="highlight">1.58496...</span>
+
+<span class="comment">// True binary: log₂(2) = 1.00 bit exactly</span>
+<span class="comment">// Ternary:     log₂(3) ≈ 1.58 bits per weight</span>
+
+<span class="comment">// Example — a 7B parameter model:</span>
+FP16 storage   = 7,000,000,000 × 16 bits  = <span class="highlight">112 GB</span>
+1.58-bit storage ≈ 7,000,000,000 × 1.58 bits ≈ <span class="highlight2">~1.4 GB</span></div>
+
+    <div class="section-label">Memory footprint at a glance</div>
+
+    <div class="weight-compare">
+      <div class="wc-row">
+        <span class="wc-label">FP32</span>
+        <div class="wc-bar-bg"><div class="wc-bar bar-fp32">32 bits</div></div>
+      </div>
+      <div class="wc-row">
+        <span class="wc-label">FP16</span>
+        <div class="wc-bar-bg"><div class="wc-bar bar-fp16">16 bits</div></div>
+      </div>
+      <div class="wc-row">
+        <span class="wc-label">1.58-bit</span>
+        <div class="wc-bar-bg"><div class="wc-bar bar-158" style="width:4.9375%;">1.58</div></div>
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">Weight states</div>
+        <div class="stat-value">3</div>
+        <div class="stat-sub">−1 · 0 · +1</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Bits per weight</div>
+        <div class="stat-value">1.58</div>
+        <div class="stat-sub">log₂(3) exactly</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">vs FP16</div>
+        <div class="stat-value">10×</div>
+        <div class="stat-sub">smaller footprint</div>
+      </div>
+    </div>
+
+    <hr class="divider-line">
+
+    <div class="section-label">Why zero is the secret weapon</div>
+
+    <p class="body-text">True binary (0/1) can simulate a zero by convention, but ternary <em>natively</em> encodes it. When a weight is zero, the entire multiply-accumulate operation can be skipped. This is why 1.58-bit models can run matrix multiplications using only additions — no floating-point multiplies needed. On hardware that supports it, this translates to both energy and latency wins, not just memory savings.</p>
+
+    <p class="body-text">Think of it like a neural network switch: a weight of <code>+1</code> passes the signal through, <code>−1</code> inverts it, and <code>0</code> kills it entirely. You get directionality, negation, and gating — all without a single floating-point multiply.</p>
+
+    <div class="callout">
+      <strong>The punchline:</strong> When people say "1-bit model," they usually mean a model where each weight is one of {−1, 0, +1}. That's ternary, not binary. The honest name is 1.58-bit, because that's exactly how much information entropy each weight carries — log₂(3). The shorthand "1-bit" stuck for marketing reasons, but the math behind it is more interesting than the name suggests.
+    </div>
+
+    <hr class="final">
+
+    <div class="footer-tags">
+      <span class="ftag">BitNet</span>
+      <span class="ftag">Quantization</span>
+      <span class="ftag">LLM</span>
+      <span class="ftag">InformationTheory</span>
+      <span class="ftag">MLSystems</span>
+      <span class="ftag">DeepLearning</span>
+    </div>
+  </article>
+
+</div>
+</body>
+</html>
