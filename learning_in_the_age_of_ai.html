@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning in the Age of AI — Omar Faroque</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;1,8..60,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1612;
+    --paper: #f5f0e8;
+    --accent: #8b3a1e;
+    --muted: #6b6256;
+    --rule: #c9bfae;
+  }
+
+  html { font-size: 18px; }
+
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 300;
+    line-height: 1.8;
+    min-height: 100vh;
+  }
+
+  /* subtle paper texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 80px 24px 120px;
+  }
+
+  /* ── header ── */
+  .masthead {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 10px;
+    margin-bottom: 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .masthead .byline-top { font-style: italic; letter-spacing: 0; text-transform: none; font-size: 0.78rem; color: var(--ink); }
+
+  /* ── kicker ── */
+  .kicker {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 18px;
+  }
+
+  /* ── title ── */
+  h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(2.2rem, 6vw, 3.4rem);
+    font-weight: 700;
+    line-height: 1.13;
+    letter-spacing: -0.01em;
+    margin-bottom: 20px;
+    color: var(--ink);
+  }
+
+  /* ── dek / subtitle ── */
+  .dek {
+    font-size: 1.05rem;
+    line-height: 1.65;
+    color: var(--muted);
+    border-left: 3px solid var(--accent);
+    padding-left: 18px;
+    margin-bottom: 42px;
+    font-style: italic;
+  }
+
+  /* ── rule ── */
+  .rule {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 42px 0;
+  }
+
+  /* ── body copy ── */
+  .body-text p {
+    margin-bottom: 1.5em;
+    font-size: 1rem;
+  }
+
+  /* ── section entries ── */
+  .reason {
+    margin: 44px 0;
+    padding-left: 0;
+  }
+
+  .reason-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+
+  .reason-number {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: var(--rule);
+    line-height: 1;
+    flex-shrink: 0;
+    position: relative;
+    top: 4px;
+  }
+
+  .reason-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.22rem;
+    font-weight: 700;
+    font-style: italic;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+  .reason-body {
+    font-size: 1rem;
+    line-height: 1.85;
+    color: var(--ink);
+    padding-left: 54px;
+  }
+
+  /* ── pull quote ── */
+  .pull-quote {
+    margin: 48px -24px;
+    padding: 30px 36px;
+    border-top: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.35rem;
+    font-style: italic;
+    line-height: 1.55;
+    color: var(--ink);
+    text-align: center;
+  }
+
+  .pull-quote cite {
+    display: block;
+    font-family: 'Source Serif 4', serif;
+    font-style: normal;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+
+  /* ── closing ── */
+  /* ── dark closing band ── */
+  .dark-close {
+    background-color: var(--ink);
+    margin: 0 -24px -120px;
+    padding: 56px 24px 64px;
+    margin-top: 60px;
+  }
+
+  .dark-close .close-rule {
+    border: none;
+    border-top: 1px solid #3a342c;
+    margin-bottom: 36px;
+  }
+
+  .dark-close p {
+    font-size: 0.95rem;
+    color: #b0a898;
+    line-height: 1.8;
+  }
+
+  .dark-close .close-kicker {
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  @media (max-width: 520px) {
+    .pull-quote { margin: 36px 0; }
+    .reason-body { padding-left: 36px; }
+    .reason-number { font-size: 2.2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="masthead">
+    <span>Essay</span>
+    <span class="byline-top">Md Omar Faroque</span>
+    <span>2025</span>
+  </div>
+
+  <p class="kicker">On Knowledge, Curiosity &amp; the Machine</p>
+
+  <h1>Learning in the Age of AI</h1>
+
+  <p class="dek">A younger colleague asked me a sharp question: in an era where AI can answer almost anything, what is the point of learning? I have been thinking about it ever since.</p>
+
+  <div class="body-text">
+    <p>
+      Yesterday I told him I am driven by learning — that money is merely a side effect of doing meaningful work. He looked at me with genuine curiosity and pushed back: <em>"But if AI already knows everything, why should I spend years acquiring knowledge it already has?"</em>
+    </p>
+    <p>
+      It is a fair and serious question. It deserves a serious answer.
+    </p>
+  </div>
+
+  <hr class="rule">
+
+  <div class="reason">
+    <div class="reason-header">
+      <span class="reason-number">I</span>
+      <span class="reason-title">The brain is wired to learn through struggle, not shortcuts</span>
+    </div>
+    <p class="reason-body">
+      Our brains are not optimized for comfort — they are optimized for survival through problem-solving. Struggle is not a bug; it is the mechanism. The desirable difficulty of working through hard things is precisely what builds durable, transferable understanding. When you skip the struggle, you skip the wiring.
+    </p>
+    <p class="reason-body">
+      More importantly, the most consequential ideas in history rarely came from experts staying inside their lane. In an interview I once watched, Leslie Lamport — the architect of distributed systems thinking, Turing Award laureate — explained that he invented the Lamport clock and his foundational work on consensus partly because he came to computer science steeped in physics and the theory of relativity. He saw time differently than his peers. His cross-domain intuition was the innovation. Multidisciplinary learning is not a soft virtue. It is how breakthroughs happen.
+    </p>
+  </div>
+
+  <div class="reason">
+    <div class="reason-header">
+      <span class="reason-number">II</span>
+      <span class="reason-title">Humans learn from nature; LLMs learn from text about nature</span>
+    </div>
+    <p class="reason-body">
+      There is a profound asymmetry here worth sitting with. Large language models are trained on human-produced text — a vast, rich, and deeply incomplete proxy for reality. Human beings learn from direct experience, from embodied sensation, from watching systems fail and recover in real time.
+    </p>
+    <p class="reason-body">
+      Ray Dalio, in his book <em>Principles</em>, argues that nature itself is the best model for understanding how complex systems work — how ecosystems balance, how organisms adapt, how evolution selects. He urges us to look at nature not metaphorically but practically, as a source of design patterns for human problems. Your accumulated experience — the books you have read, the failures you have absorbed, the mentors you have watched, the environments you have navigated — forms a model of the world that is richer and stranger than any corpus of text. AI can compress human knowledge; it cannot replicate human experience.
+    </p>
+  </div>
+
+  <div class="pull-quote">
+    "To ask a good question, you must first understand what you do not know. That is itself a form of mastery."
+    <cite>On the craft of inquiry</cite>
+  </div>
+
+  <div class="reason">
+    <div class="reason-header">
+      <span class="reason-number">III</span>
+      <span class="reason-title">AI is a question-answering machine — and questions require knowledge</span>
+    </div>
+    <p class="reason-body">
+      Here is the practical paradox at the heart of the AI era: the less you know, the less you can extract from these tools. A language model will faithfully answer the question you ask it. The problem is that shallow questions produce shallow answers. The ability to ask a precise, probing, well-framed question is not a trivial skill — it is the distillation of expertise. It requires knowing the shape of a problem, understanding its boundaries, recognizing where common wisdom tends to go wrong.
+    </p>
+    <p class="reason-body">
+      A great engineer does not get value from AI by typing vague prompts and accepting the output. A great engineer uses AI as a thinking partner — pushing back, probing edge cases, synthesizing multiple answers into a coherent design. That capacity for critical engagement comes from years of learning. AI does not diminish the need for expertise. It raises the premium on deep expertise while ruthlessly commoditizing shallow expertise.
+    </p>
+  </div>
+
+  <div class="reason">
+    <div class="reason-header">
+      <span class="reason-number">IV</span>
+      <span class="reason-title">Learning is not instrumental — it is existential</span>
+    </div>
+    <p class="reason-body">
+      This last point is personal, and I share it as such.
+    </p>
+    <p class="reason-body">
+      For me, learning is not a strategy for career advancement. It is something closer to a biological need — like eating. When I stop learning, I do not feel stagnant. I feel hungry. I have left jobs not over salary disputes but because the learning had stopped, because I could feel myself going through the motions of work without growing through them. I may not be the wealthiest person in any room I walk into. But I am rarely the most restless, and I am almost never bored.
+    </p>
+    <p class="reason-body">
+      There is a word for people who have satisfied all their material needs but stopped being curious about the world: they are called <em>finished</em>. I do not want to be finished. I suspect you don't either.
+    </p>
+  </div>
+
+  <hr class="rule">
+
+  <div class="body-text">
+    <p>
+      So to my colleague's question — what is the purpose of learning in the age of AI — my answer is this: the age of AI is precisely why learning matters more, not less. The people who thrive in this era will not be those who outsource their thinking to machines. They will be the ones with enough knowledge to direct those machines, enough wisdom to question them, and enough curiosity to go beyond what any machine has yet been asked.
+    </p>
+    <p>
+      The machine learns from us. We should not stop learning from the world.
+    </p>
+  </div>
+
+  <div class="dark-close">
+    <div class="close-rule"></div>
+    <p class="close-kicker">Personal Essay</p>
+    <p>The machine learns from us. We should not stop learning from the world.</p>
+  </div>
+
+</div>
+</body>
+</html>
