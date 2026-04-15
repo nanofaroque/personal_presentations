@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HyperLogLog: Counting Billions With 12 Kilobytes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;1,8..60,300;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:       #1a1814;
+    --ink-2:     #3d3a34;
+    --ink-3:     #6b6760;
+    --ink-4:     #9c9890;
+    --paper:     #faf8f4;
+    --paper-2:   #f2efe8;
+    --paper-3:   #e8e4da;
+    --rule:      rgba(30,26,20,0.12);
+    --rule-md:   rgba(30,26,20,0.22);
+    --accent:    #1d4ed8;
+    --accent-lt: #eff3ff;
+    --success:   #166534;
+    --danger:    #991b1b;
+    --mono:      'JetBrains Mono', 'Fira Code', monospace;
+    --serif:     'Source Serif 4', Georgia, serif;
+    --display:   'Playfair Display', Georgia, serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 18px;
+    line-height: 1.78;
+    -webkit-font-smoothing: antialiased;
+  }
+
+
+
+  /* ── HERO ── */
+  .hero {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 4rem 2rem 2.5rem;
+  }
+
+  .kicker {
+    font-family: var(--serif);
+    font-size: 0.72rem;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .kicker::before {
+    content: '';
+    display: inline-block;
+    width: 24px;
+    height: 1px;
+    background: var(--ink-4);
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(2.4rem, 5.5vw, 3.6rem);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 1.3rem;
+  }
+
+  .deck {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: 1.22rem;
+    color: var(--ink-2);
+    line-height: 1.55;
+    margin-bottom: 1.4rem;
+    padding-left: 1.1rem;
+    border-left: 3px solid var(--rule-md);
+  }
+
+  .byline {
+    font-size: 0.75rem;
+    color: var(--ink-4);
+    letter-spacing: 0.06em;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .byline strong {
+    color: var(--ink-3);
+    font-weight: 400;
+  }
+
+  /* ── CONTENT ── */
+  .content {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 2rem 5rem;
+  }
+
+  h2 {
+    font-family: var(--display);
+    font-size: 1.7rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--ink);
+    margin: 3rem 0 1rem;
+  }
+
+  p {
+    font-size: 1rem;
+    color: var(--ink);
+    margin-bottom: 1.15rem;
+    font-variant-numeric: oldstyle-nums;
+  }
+
+  strong { font-weight: 500; color: var(--ink); }
+
+  em { font-style: italic; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.82em;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+
+  /* ── CALLOUT ── */
+  .callout {
+    background: var(--paper-2);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 1rem 1.3rem;
+    margin: 1.6rem 0;
+    font-size: 0.93rem;
+    color: var(--ink-2);
+    font-style: italic;
+    line-height: 1.6;
+  }
+
+  .callout strong { color: var(--ink); font-style: normal; }
+
+  /* ── MATH BLOCK ── */
+  .math-block {
+    background: #1a1814;
+    color: #d4cfbf;
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem;
+    margin: 1.4rem 0;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    line-height: 1.8;
+    overflow-x: auto;
+  }
+
+  .math-block b { color: #f9a825; font-weight: 500; }
+  .math-block .comment { color: #5a5850; font-style: italic; }
+  .math-block .hi { color: #80cbc4; }
+  .math-block .val { color: #ef9a9a; }
+
+  /* ── PULL QUOTE ── */
+  .pull-quote {
+    font-family: var(--display);
+    font-size: 1.55rem;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--ink-2);
+    border-top: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    padding: 1.3rem 0;
+    margin: 2.5rem 0;
+    text-align: center;
+    line-height: 1.35;
+  }
+
+  /* ── STEP GRID ── */
+  .step-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 1.6rem 0;
+  }
+
+  .step-card {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 1.1rem 1.2rem;
+  }
+
+  .step-num {
+    font-family: var(--display);
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: var(--paper-3);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .step-title {
+    font-family: var(--serif);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 0.3rem;
+  }
+
+  .step-card p {
+    font-size: 0.85rem;
+    color: var(--ink-3);
+    margin: 0;
+    line-height: 1.55;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: var(--rule);
+    margin: 2.5rem 0;
+  }
+
+  .ornament {
+    text-align: center;
+    color: var(--ink-4);
+    font-size: 1.2rem;
+    margin: 2rem 0;
+    letter-spacing: 0.5em;
+  }
+
+  /* ══════════════════════════════════════════
+     INTERACTIVE DEMO
+  ══════════════════════════════════════════ */
+  .demo-wrap {
+    background: var(--paper);
+    border: 1px solid var(--rule-md);
+    border-radius: 12px;
+    padding: 1.8rem;
+    margin: 2rem 0;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.04);
+  }
+
+  .demo-header {
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 1rem;
+    margin-bottom: 1.3rem;
+  }
+
+  .demo-title {
+    font-family: var(--display);
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+  }
+
+  .demo-sub {
+    font-size: 0.75rem;
+    color: var(--ink-4);
+    letter-spacing: 0.05em;
+    font-family: var(--mono);
+  }
+
+  .demo-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .demo-controls label {
+    font-size: 0.8rem;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+
+  .demo-controls input[type=range] {
+    flex: 1;
+    min-width: 120px;
+    accent-color: var(--accent);
+  }
+
+  .demo-controls .val {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--ink);
+    min-width: 50px;
+    font-weight: 500;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 1.3rem;
+  }
+
+  button {
+    font-family: var(--serif);
+    font-size: 0.82rem;
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--rule-md);
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    letter-spacing: 0.01em;
+  }
+
+  button:hover { background: var(--paper-2); }
+
+  button.primary {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  button.primary:hover { background: var(--ink-2); border-color: var(--ink-2); }
+
+  button.active-auto {
+    background: #fee2e2;
+    color: var(--danger);
+    border-color: #fca5a5;
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1.3rem;
+  }
+
+  .stat-box {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    text-align: center;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    color: var(--ink-4);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 4px;
+    font-family: var(--mono);
+  }
+
+  .stat-val {
+    font-family: var(--display);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .stat-val.hll { color: var(--accent); }
+  .stat-val.good { color: var(--success); }
+  .stat-val.bad  { color: var(--danger); }
+
+  /* Bucket visualizer */
+  .bucket-section { margin-bottom: 1rem; }
+
+  .bucket-label {
+    font-size: 0.68rem;
+    color: var(--ink-4);
+    margin-bottom: 6px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-family: var(--mono);
+  }
+
+  .buckets {
+    display: flex;
+    gap: 2px;
+    align-items: flex-end;
+    height: 68px;
+    padding: 0 2px;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .bucket {
+    flex: 1;
+    background: var(--paper-3);
+    border-radius: 1px 1px 0 0;
+    transition: height 0.35s ease, background 0.35s ease;
+    min-width: 4px;
+  }
+
+  .bucket.active { background: var(--accent); opacity: 0.7; }
+  .bucket.hot    { background: var(--accent); opacity: 1; }
+
+  /* Stream log */
+  .stream-log {
+    background: #1a1814;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: #7a766a;
+    height: 82px;
+    overflow-y: auto;
+    line-height: 1.7;
+  }
+
+  .log-entry { color: #b8b3a5; }
+  .log-entry .tok { color: #80cbc4; }
+  .log-entry .num { color: #f9a825; }
+  .log-entry .err-good { color: #a5d6a7; }
+  .log-entry .err-bad  { color: #ef9a9a; }
+
+  /* ── CONCLUSION ── */
+  .conclusion {
+    padding-top: 2rem;
+    border-top: 2px solid var(--ink);
+    margin-top: 2.5rem;
+  }
+
+  /* ── TAGS ── */
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .tag {
+    font-size: 0.7rem;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: var(--paper-2);
+    color: var(--ink-3);
+    border: 1px solid var(--rule-md);
+    letter-spacing: 0.05em;
+    font-family: var(--mono);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 2.5rem 2rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.78rem;
+    color: var(--ink-4);
+    letter-spacing: 0.04em;
+  }
+
+  footer a { color: var(--ink-3); text-decoration: none; }
+  footer a:hover { color: var(--ink); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .hero { padding: 2.5rem 1.2rem 1.5rem; }
+    .content { padding: 0 1.2rem 4rem; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .stats-row .stat-box:last-child { grid-column: 1 / -1; }
+    .demo-wrap { padding: 1.2rem; }
+    h1 { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+
+
+
+<!-- ── HERO ── -->
+<header class="hero">
+  <p class="kicker">Probabilistic Data Structures &nbsp;·&nbsp; Deep Dive</p>
+  <h1>HyperLogLog: Counting&nbsp;Billions With&nbsp;12&nbsp;Kilobytes</h1>
+  <p class="deck">A million distinct users walked through your API today. How do you count them without storing a million IDs? The answer hides in a beautiful statistical trick—and it fits in a tweet.</p>
+  <p class="byline"><strong>Omar Faroque</strong> &nbsp;·&nbsp; April 2026 &nbsp;·&nbsp; 7 min read</p>
+</header>
+
+<!-- ── BODY ── -->
+<main class="content">
+
+  <!-- Section 1 -->
+  <h2>The Problem: Counting Is Expensive</h2>
+
+  <p>Every analytics system eventually hits the same wall. Your product manager asks: <em>"How many unique visitors did we have last month?"</em> Sounds simple. But at scale—billions of events, thousands of queries per second—the naive solution turns into a nightmare.</p>
+
+  <p>The textbook approach is a <strong>hash set</strong>: store every unique item you've seen, and take the size at query time. It's exact, but the cost is brutal. One billion 64-bit IDs consume roughly <strong>8 GB of RAM</strong>—per counter. Redis's <code>PFADD</code>/<code>PFCOUNT</code> serves the same query from <strong>12 KB</strong>, with less than 1% error. That's a 600,000× improvement in memory.</p>
+
+  <div class="callout">
+    At LinkedIn, counting unique member profile views, unique job applicants, or unique ad impressions per campaign requires cardinality estimation across trillions of events. An exact count requires memory proportional to the data—HyperLogLog makes it a constant.
+  </div>
+
+  <p>The family of algorithms that solve this is called <strong>cardinality estimation</strong>, and HyperLogLog (HLL) is the reigning champion—used by Redis, BigQuery, Spark, Presto, Druid, and virtually every modern data warehouse.</p>
+
+  <div class="ornament">✦ &nbsp; ✦ &nbsp; ✦</div>
+
+  <!-- Section 2 -->
+  <h2>How It Works: The Beautiful Trick</h2>
+
+  <p>HyperLogLog is built on a deceptively simple observation about random binary strings.</p>
+
+  <p><strong>The coin-flip intuition:</strong> Imagine flipping a fair coin until you get heads. If the longest run of tails you've ever seen in your life is <em>k</em>, that tells you something about how many times you've flipped. If your longest streak is 3, you've probably flipped ~8 times. If it's 10, you've probably flipped ~1024 times. The maximum leading zeros in a hash acts exactly like this.</p>
+
+  <div class="pull-quote">"If you've ever seen 20 leading zeros in a hash, you've probably hashed around a million distinct values."</div>
+
+  <p>Here's the core algorithm in four steps:</p>
+
+  <div class="step-grid">
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <div class="step-title">Hash every element</div>
+      <p>Apply a uniform hash function to each item. This turns <code>"user_99"</code> into a random-looking 64-bit string like <code>00001101…</code></p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <div class="step-title">Split into buckets</div>
+      <p>Use the first <code>b</code> bits to route the hash into one of <code>m = 2ᵇ</code> registers. With <code>b=14</code>, you get 16,384 buckets.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <div class="step-title">Count leading zeros</div>
+      <p>In the remaining bits, count the position of the first <code>1</code>. Store the <em>maximum</em> such value seen in each register.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">04</div>
+      <div class="step-title">Harmonic mean → estimate</div>
+      <p>Combine all registers using a <strong>harmonic mean</strong> formula to produce the cardinality estimate, with bias correction applied.</p>
+    </div>
+  </div>
+
+  <h2>A Crisp Example</h2>
+
+  <p>Let's trace through four values with a toy 4-bucket HLL. We use <code>b=2</code>, which means the first 2 bits of every hash select the bucket, and the remaining bits are used to count leading zeros.</p>
+
+  <p>That gives us <strong><code>m = 2ᵇ = 2² = 4</code> registers</strong>. Think of <code>m</code> as the number of independent "lanes" we run in parallel. Each lane keeps its own personal record of the longest leading-zero streak it has ever seen. More lanes = more averaging = lower error, but more memory.</p>
+
+  <div class="math-block">
+<b>hash</b>(<span class="hi">"alice"</span>)  = <b>01</b> 00011…  → bucket <span class="val">1</span>, leading zeros = 3, max[1] = 3
+<b>hash</b>(<span class="hi">"bob"</span>)    = <b>11</b> 10010…  → bucket <span class="val">3</span>, leading zeros = 0, max[3] = 0
+<b>hash</b>(<span class="hi">"carol"</span>)  = <b>01</b> 00001…  → bucket <span class="val">1</span>, leading zeros = 4, max[1] = max(3,4) = <b>4</b>
+<b>hash</b>(<span class="hi">"dave"</span>)   = <b>10</b> 01101…  → bucket <span class="val">2</span>, leading zeros = 1, max[2] = 1
+
+<span class="comment">Registers after 4 insertions (m = 4 buckets):</span>
+  bucket 0: max = 0
+  bucket 1: max = <b>4</b>  ← carol's hash had 4 leading zeros
+  bucket 2: max = 1
+  bucket 3: max = 0
+
+<span class="comment">Estimate = α × m² × harmonic_mean(2^max[i])⁻¹</span>
+         ≈ <span class="val">4.17</span>  (close to the real answer: 4)</div>
+
+  <p><strong>Breaking down the formula term by term:</strong></p>
+
+  <p><code>α</code> is a small bias-correction constant, mathematically derived to cancel a systematic overcount introduced by the harmonic mean. For <code>m = 4</code> it equals roughly <code>0.532</code>; for large <code>m</code> it converges to <code>~0.7213</code>. You look it up once and bake it in.</p>
+
+  <p><code>m²</code> scales the estimate up because each register only saw <em>1/m</em> of the stream (items are split across buckets). Squaring <code>m</code> compensates for both the splitting and the normalisation inside the harmonic mean.</p>
+
+  <p><code>harmonic_mean(2^max[i])⁻¹</code> is the core statistical engine. For each register <code>i</code>, we compute <code>2^max[i]</code>—the implied cardinality if that register were the only one. We then take the <em>harmonic mean</em> of all <code>m</code> such values. Plugging in our example:</p>
+
+  <div class="math-block">
+<span class="comment">2^max[i] for each bucket:</span>
+  bucket 0: 2^0 = <span class="val">1</span>   (no leading zeros seen — implies very low cardinality)
+  bucket 1: 2^4 = <span class="val">16</span>  (4 leading zeros seen — implies higher cardinality)
+  bucket 2: 2^1 = <span class="val">2</span>   (1 leading zero seen)
+  bucket 3: 2^0 = <span class="val">1</span>   (no leading zeros seen)
+
+<span class="comment">Harmonic mean = m / (1/v₀ + 1/v₁ + 1/v₂ + 1/v₃)</span>
+             = 4 / (1/1 + 1/16 + 1/2 + 1/1)
+             = 4 / (1 + 0.0625 + 0.5 + 1)
+             = 4 / 2.5625
+             ≈ <span class="val">1.561</span>
+
+<span class="comment">Final estimate = α × m² × (1 / harmonic_mean)</span>
+              = 0.532 × 16 × (1 / 1.561)
+              ≈ <b>4.17</b>  ✓</div>
+
+  <p>Notice how bucket 1's outlier value of 16 barely moves the needle. If we had used an <strong>arithmetic mean</strong> instead, bucket 1 would dominate and the estimate would balloon to ~10. The harmonic mean's resistance to outliers is precisely why it was chosen—a single lucky hash with 20 leading zeros won't ruin your count.</p>
+
+  <p>The constant <code>α</code> is a correction factor derived from the math, and Redis applies additional small-range and large-range corrections to hit a standard error of <strong>±0.81%</strong> using only 12 KB of memory.</p>
+
+  <div class="callout">
+    <strong>Why exactly 12 KB?</strong> Redis uses <code>b=14</code> → 16,384 buckets. Each bucket needs 6 bits to store the max leading-zero count (values 0–63). That's 16,384 × 6 bits = 98,304 bits ≈ 12 KB. Exact. Fixed. Forever—regardless of whether you've seen 100 or 100 billion distinct elements.
+  </div>
+
+  <p>HLL is also <strong>mergeable</strong>: to combine two HLL sketches (say, Monday's and Tuesday's unique visitors), you take the per-bucket maximum. The merged sketch correctly estimates the union. This makes distributed computation trivial—run HLL on each shard, merge the registers, done.</p>
+
+  <div class="divider"></div>
+
+  <!-- ── INTERACTIVE DEMO ── -->
+  <h2>Interactive Demo</h2>
+  <p>Here's a live HyperLogLog running in your browser. Stream in random elements, watch the registers update, and see how close the estimate stays to the true count. About 15% of insertions re-insert existing elements to simulate real-world duplicates.</p>
+
+  <div class="demo-wrap" role="region" aria-label="HyperLogLog interactive demo">
+    <div class="demo-header">
+      <div class="demo-title">HyperLogLog Playground</div>
+      <div class="demo-sub">b = 8 · 256 registers · standard error ≈ 6.5%</div>
+    </div>
+
+    <div class="demo-controls">
+      <label for="batch-size">Batch size</label>
+      <input type="range" id="batch-size" min="1" max="500" value="50" step="1"
+             oninput="document.getElementById('batch-label').textContent = this.value">
+      <span class="val" id="batch-label">50</span>
+    </div>
+
+    <div class="btn-row">
+      <button class="primary" onclick="addBatch()">+ Add batch</button>
+      <button onclick="addBatch(1)">+ Add one</button>
+      <button id="auto-btn" onclick="toggleAuto()">▶ Auto stream</button>
+      <button onclick="resetHLL()">↺ Reset</button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-label">True cardinality</div>
+        <div class="stat-val" id="true-count">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">HLL estimate</div>
+        <div class="stat-val hll" id="hll-est">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Relative error</div>
+        <div class="stat-val" id="hll-err">—</div>
+      </div>
+    </div>
+
+    <div class="bucket-section">
+      <div class="bucket-label">256 registers — bar height = max leading zeros in that register</div>
+      <div class="buckets" id="buckets" role="img" aria-label="Register visualization"></div>
+    </div>
+
+    <div class="bucket-label" style="margin-top:0.8rem">Stream log</div>
+    <div class="stream-log" id="stream-log" role="log" aria-live="polite">
+      <span>Add elements to begin…</span>
+    </div>
+  </div>
+
+  <!-- ── CONCLUSION ── -->
+  <div class="conclusion">
+    <h2 style="margin-top:0">Conclusion</h2>
+    <p>HyperLogLog is one of the most elegant algorithms in computer science. It trades a small, bounded amount of accuracy for an astronomical reduction in memory—turning an O(n) problem into O(1). The core insight—that the maximum number of leading zeros in a hash function behaves like a fingerprint of cardinality—is the kind of idea that makes you want to go outside and stare at the sky for a while.</p>
+    <p>If you're building systems that need to answer <em>"how many distinct things?"</em>, HLL belongs in your toolkit. It's production-hardened, mergeable across shards, incrementally updatable, and provably correct in its error bounds. Redis exposes it out of the box with <code>PFADD</code> and <code>PFCOUNT</code>. Google BigQuery uses it behind <code>APPROX_COUNT_DISTINCT()</code>. Apache Flink ships it as a native window aggregation. The algorithm is 20 years old and it's still the answer.</p>
+    <p>The next time someone asks <em>"how many unique users?"</em>—you know exactly which twelve kilobytes to reach for.</p>
+  </div>
+
+  <div class="tag-row">
+    <span class="tag">algorithms</span>
+    <span class="tag">distributed-systems</span>
+    <span class="tag">redis</span>
+    <span class="tag">cardinality-estimation</span>
+    <span class="tag">probabilistic</span>
+    <span class="tag">sketching</span>
+    <span class="tag">java</span>
+  </div>
+
+</main>
+
+<footer>
+  <p>&copy; 2026 <a href="https://nanofaroque.github.io">Omar Faroque</a> &nbsp;·&nbsp; nanofaroque.github.io</p>
+</footer>
+
+<script>
+  /* ── HyperLogLog implementation ── */
+  const B     = 8;
+  const M     = 1 << B;  // 256 registers → ~6.5% theoretical std error
+  const ALPHA = 0.7213 / (1 + 1.079 / M);
+  const TWO32 = Math.pow(2, 32);
+
+  let registers = new Uint8Array(M);
+  let trueSet   = new Set();
+  let counter   = 0;
+  let autoTimer = null;
+
+  // FNV-1a base
+  function fnv32a(str) {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h  = Math.imul(h, 16777619) >>> 0;
+    }
+    return h;
+  }
+
+  // MurmurHash3 finalizer — fixes FNV's poor high-bit distribution
+  // on sequential inputs like "user_1", "user_2", ...
+  function fmix32(h) {
+    h ^= h >>> 16;
+    h  = Math.imul(h, 0x85ebca6b) >>> 0;
+    h ^= h >>> 13;
+    h  = Math.imul(h, 0xc2b2ae35) >>> 0;
+    h ^= h >>> 16;
+    return h >>> 0;
+  }
+
+  function hash(str)  { return fmix32(fnv32a(str)); }
+  function hash2(str) { return fmix32(fnv32a(str + '\x00hll')); }
+
+  function leadingZeros32(n) {
+    if (n === 0) return 32;
+    let c = 0;
+    while ((n & 0x80000000) === 0) { c++; n = (n << 1) >>> 0; }
+    return c;
+  }
+
+  function hllAdd(val) {
+    const h1     = hash(val);
+    const h2     = hash2(val);
+    const bucket = h1 >>> (32 - B);
+    const rest   = ((h1 << B) | (h2 >>> (32 - B))) >>> 0;
+    const rho    = leadingZeros32(rest) + 1;
+    if (rho > registers[bucket]) registers[bucket] = rho;
+    return { bucket, rho };
+  }
+
+  function hllEstimate() {
+    let sum = 0;
+    for (let i = 0; i < M; i++) sum += Math.pow(2, -registers[i]);
+    let est = ALPHA * M * M / sum;
+    const zeros = registers.filter(r => r === 0).length;
+    if (est <= 2.5 * M && zeros > 0) {
+      // Small-range correction
+      est = M * Math.log(M / zeros);
+    } else if (est > TWO32 / 30) {
+      // Large-range correction
+      est = -TWO32 * Math.log(1 - est / TWO32);
+    }
+    return Math.round(est);
+  }
+
+  function renderBuckets(hotBucket) {
+    const el = document.getElementById('buckets');
+    const maxR = Math.max(...registers, 1);
+    el.innerHTML = '';
+    for (let i = 0; i < M; i++) {
+      const d   = document.createElement('div');
+      const pct = registers[i] === 0 ? 5 : Math.max(8, (registers[i] / 20) * 100);
+      d.className = 'bucket' + (registers[i] > 0 ? (i === hotBucket ? ' hot' : ' active') : '');
+      d.style.height = Math.min(pct, 100) + '%';
+      el.appendChild(d);
+    }
+  }
+
+  function updateUI(sample) {
+    const tc  = trueSet.size;
+    const est = hllEstimate();
+    const err = tc > 0 ? Math.abs(est - tc) / tc * 100 : 0;
+
+    document.getElementById('true-count').textContent = tc.toLocaleString();
+    document.getElementById('hll-est').textContent    = est.toLocaleString();
+
+    const errEl = document.getElementById('hll-err');
+    errEl.textContent  = tc > 0 ? err.toFixed(2) + '%' : '—';
+    errEl.className    = 'stat-val ' + (tc === 0 ? '' : err < 2 ? 'good' : 'bad');
+
+    if (sample) {
+      const log   = document.getElementById('stream-log');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      const errClass  = err < 2 ? 'err-good' : 'err-bad';
+      entry.innerHTML =
+        `hash(<span class="tok">"${sample.val}"</span>) → bucket <span class="num">${sample.bucket}</span>,` +
+        ` rho=<span class="num">${sample.rho}</span>,` +
+        ` est=<span class="num">${est.toLocaleString()}</span>` +
+        (tc > 0 ? `,  err=<span class="${errClass}">${err.toFixed(2)}%</span>` : '');
+      if (log.querySelector('span')) log.innerHTML = '';
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+      renderBuckets(sample.bucket);
+    } else {
+      renderBuckets(-1);
+    }
+  }
+
+  function addBatch(n) {
+    const count = (n !== undefined) ? n : parseInt(document.getElementById('batch-size').value);
+    let lastSample = null;
+    for (let i = 0; i < count; i++) {
+      let val;
+      if (trueSet.size > 0 && Math.random() < 0.15) {
+        const arr = [...trueSet];
+        val = arr[Math.floor(Math.random() * arr.length)];
+      } else {
+        val = 'user_' + (++counter);
+        trueSet.add(val);
+      }
+      const info = hllAdd(val);
+      if (i === count - 1) lastSample = { val, ...info };
+    }
+    updateUI(lastSample);
+  }
+
+  function resetHLL() {
+    stopAuto();
+    registers = new Uint8Array(M);
+    trueSet.clear();
+    counter = 0;
+    document.getElementById('true-count').textContent = '0';
+    document.getElementById('hll-est').textContent    = '0';
+    const errEl = document.getElementById('hll-err');
+    errEl.textContent = '—';
+    errEl.className   = 'stat-val';
+    document.getElementById('stream-log').innerHTML   = '<span>Add elements to begin…</span>';
+    renderBuckets(-1);
+  }
+
+  function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    const btn = document.getElementById('auto-btn');
+    btn.textContent = '▶ Auto stream';
+    btn.classList.remove('active-auto');
+  }
+
+  function toggleAuto() {
+    if (autoTimer) { stopAuto(); return; }
+    const btn = document.getElementById('auto-btn');
+    btn.textContent = '⏹ Stop';
+    btn.classList.add('active-auto');
+    autoTimer = setInterval(() => {
+      if (trueSet.size >= 50000) { stopAuto(); return; }
+      addBatch();
+    }, 280);
+  }
+
+  // Initial render
+  renderBuckets(-1);
+</script>
+</body>
+</html>
