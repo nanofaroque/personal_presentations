@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>The Confused Deputy Wears a New Badge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,700&family=DM+Sans:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --bg-elev: #16161a;
+  --ink: #ececec;
+  --ink-soft: #a8a8ad;
+  --rule: #2a2a30;
+  --accent: #e0c97f;       /* aged gold */
+  --danger: #d96459;       /* faded vermilion */
+  --safe: #7fb069;         /* moss */
+  --link: #e0c97f;
+  --serif: 'Playfair Display', 'Times New Roman', serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', 'DM Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 300;
+  line-height: 1.65;
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background-image:
+    radial-gradient(1200px 600px at 80% -10%, rgba(224,201,127,0.05), transparent 60%),
+    radial-gradient(800px 400px at 0% 90%, rgba(217,100,89,0.04), transparent 60%);
+  background-attachment: fixed;
+}
+
+/* Subtle film grain */
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  z-index: 1000;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+}
+
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 80px 28px 120px;
+}
+
+/* ── Header ─────────────────────────────── */
+.kicker {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.kicker::before, .kicker::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+.kicker span { padding: 0 4px; }
+
+h1 {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: clamp(38px, 6vw, 64px);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  margin-bottom: 24px;
+}
+h1 em {
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 400;
+}
+
+.dek {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 21px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 600px;
+  margin-bottom: 40px;
+}
+
+.byline {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.byline span { color: var(--accent); }
+
+/* ── Drop cap & body ─────────────────────── */
+section { margin-top: 56px; }
+
+h2 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 30px;
+  line-height: 1.2;
+  margin: 56px 0 20px;
+  letter-spacing: -0.01em;
+}
+h2::before {
+  content: "§";
+  display: inline-block;
+  margin-right: 12px;
+  color: var(--accent);
+  font-weight: 400;
+  font-style: italic;
+}
+
+h3 {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 36px 0 14px;
+}
+
+p { margin-bottom: 22px; }
+
+p.lede::first-letter {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-style: italic;
+  float: left;
+  font-size: 76px;
+  line-height: 0.85;
+  padding: 8px 14px 0 0;
+  color: var(--accent);
+}
+
+a {
+  color: var(--link);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(224,201,127,0.35);
+  transition: border-color 0.2s;
+}
+a:hover { border-bottom-color: var(--accent); }
+
+strong {
+  color: var(--ink);
+  font-weight: 500;
+  background: linear-gradient(transparent 60%, rgba(224,201,127,0.18) 60%);
+  padding: 0 2px;
+}
+
+em { color: var(--ink-soft); }
+
+code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  background: var(--bg-elev);
+  border: 1px solid var(--rule);
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: var(--accent);
+}
+
+/* ── Pull quote ──────────────────────────── */
+.pull {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 26px;
+  line-height: 1.4;
+  color: var(--ink);
+  border-left: 2px solid var(--accent);
+  padding: 8px 0 8px 28px;
+  margin: 40px 0 40px 12px;
+  position: relative;
+}
+.pull::before {
+  content: "“";
+  position: absolute;
+  font-size: 80px;
+  color: var(--accent);
+  opacity: 0.25;
+  top: -20px;
+  left: -10px;
+  font-family: var(--serif);
+}
+
+/* ── Historical aside (the 1970s callout) ── */
+.aside {
+  background: var(--bg-elev);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  padding: 28px 32px;
+  margin: 40px 0;
+  position: relative;
+}
+.aside::before {
+  content: "Historical Note";
+  position: absolute;
+  top: -10px;
+  left: 24px;
+  background: var(--bg);
+  padding: 0 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.aside p { margin-bottom: 14px; font-size: 15.5px; line-height: 1.6; color: var(--ink-soft); }
+.aside p:last-child { margin-bottom: 0; }
+.aside p strong { color: var(--ink); background: none; }
+.aside code { font-size: 0.9em; }
+
+/* ── Diagrams ─────────────────────────────── */
+figure {
+  margin: 48px 0;
+  text-align: center;
+}
+figure svg {
+  width: 100%;
+  max-width: 700px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+figcaption {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-top: 18px;
+  text-align: center;
+}
+figcaption span { color: var(--accent); }
+
+.diagram-frame {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 32px 20px;
+}
+
+/* ── SVG animations ──────────────────────── */
+@keyframes flow {
+  0%   { stroke-dashoffset: 24; }
+  100% { stroke-dashoffset: 0; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+@keyframes shimmer {
+  0%   { fill-opacity: 0.15; }
+  50%  { fill-opacity: 0.35; }
+  100% { fill-opacity: 0.15; }
+}
+@keyframes drop {
+  0%   { transform: translateY(-6px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.flow-line {
+  stroke-dasharray: 6 6;
+  animation: flow 1.4s linear infinite;
+}
+.danger-fill { animation: shimmer 2.4s ease-in-out infinite; }
+.pulse { animation: pulse 1.8s ease-in-out infinite; }
+
+/* ── Comparison cards ─────────────────────── */
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  margin: 40px 0;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+}
+.compare > div {
+  background: var(--bg-elev);
+  padding: 28px 24px;
+}
+.compare h4 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.compare h4::before {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+}
+.compare > div:nth-child(1) h4::before { content: "1973"; }
+.compare > div:nth-child(2) h4::before { content: "2024+"; }
+.compare ul {
+  list-style: none;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.9;
+}
+.compare li::before {
+  content: "→ ";
+  color: var(--accent);
+}
+
+@media (max-width: 600px) {
+  .compare { grid-template-columns: 1fr; }
+}
+
+/* ── Footer ──────────────────────────────── */
+.endmark {
+  text-align: center;
+  margin: 60px 0 20px;
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--accent);
+  font-size: 28px;
+  letter-spacing: 0.4em;
+}
+
+footer {
+  border-top: 1px solid var(--rule);
+  padding-top: 24px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  text-align: center;
+}
+footer a { color: var(--ink-soft); border: none; }
+footer a:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<article class="wrap">
+
+  <h1>The Confused Deputy <em>Wears a New Badge</em></h1>
+
+  <p class="dek">A 1973 bug about a compiler with too much trust has become the defining vulnerability of the LLM era. Same shape. Different deputy.</p>
+
+  <div class="byline">
+    <div>By <span>Omar Faroque</span></div>
+    <div>Reading time: ~9 min</div>
+  </div>
+
+  <!-- ─────────────────────────────────────── -->
+
+  <section>
+    <p class="lede">The most important security paper for the AI era was published in 1988, by Norm Hardy, and described a bug that had already been killing people's billing records since the early 1970s. It is called the <em>confused deputy problem</em>, and once you see its outline you cannot unsee it. Every indirect prompt injection attack against an LLM agent is, in the precise technical sense, the same bug — just with a deputy that now speaks fluent English.</p>
+
+    <p>To see why, we need to start with the original.</p>
+  </section>
+
+  <!-- ── 1970s Aside ───────────────────────── -->
+  <div class="aside">
+    <p><strong>The original confused deputy.</strong> In Hardy's example, there was a <strong>compiler</strong> program provided on a commercial timesharing service. Users could run the compiler and optionally specify a filename where it would write debugging output, and the compiler would be able to write to that file if the user had permission to write there.</p>
+
+    <p>The compiler also collected statistics about language feature usage. Those statistics were stored in a file called <code>(SYSX)STAT</code>, in the directory <code>SYSX</code>. To make this possible, the compiler program was given permission to write to files in <code>SYSX</code>.</p>
+
+    <p>But there were other files in <code>SYSX</code>: in particular, the system's billing information was stored in a file <code>(SYSX)BILL</code>. A user ran the compiler and named <code>(SYSX)BILL</code> as the desired debugging output file.</p>
+
+    <p>This produced a confused deputy problem. The compiler made a request to the operating system to open <code>(SYSX)BILL</code>. Even though the user did not have access to that file, <strong>the compiler did</strong>, so the open succeeded. The compiler wrote the compilation output to the file as normal, overwriting it, and the billing information was destroyed.</p>
+  </div>
+
+  <p>Read that paragraph again. There is no exploit code. There is no buffer overflow. The user simply <em>asked</em> the compiler to do something, and the compiler — possessing more authority than the user — obliged. The compiler is the deputy. It is confused because it cannot tell the difference between <strong>a request that originates from its own purposes</strong> (writing to <code>SYSX/STAT</code>) and <strong>a request that originates from someone else</strong> (writing to whatever path the user passed in). Both arrive as the same kind of system call, made under the same identity.</p>
+
+  <!-- ── Diagram 1: Classic Confused Deputy ──────── -->
+  <figure>
+    <div class="diagram-frame">
+      <svg viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of the original confused deputy attack from 1973">
+        <defs>
+          <marker id="arrow1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#e0c97f"/>
+          </marker>
+          <marker id="arrowD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#d96459"/>
+          </marker>
+        </defs>
+
+        <!-- USER -->
+        <g>
+          <rect x="20" y="120" width="130" height="80" rx="2" fill="#16161a" stroke="#2a2a30"/>
+          <text x="85" y="148" text-anchor="middle" fill="#ececec" font-family="Playfair Display" font-size="16" font-style="italic">User</text>
+          <text x="85" y="170" text-anchor="middle" fill="#a8a8ad" font-family="IBM Plex Mono" font-size="10">low privilege</text>
+          <text x="85" y="186" text-anchor="middle" fill="#a8a8ad" font-family="IBM Plex Mono" font-size="10">cannot touch SYSX</text>
+        </g>
+
+        <!-- COMPILER (deputy) -->
+        <g>
+          <rect x="270" y="100" width="160" height="120" rx="2" fill="#16161a" stroke="#e0c97f" stroke-width="1.5"/>
+          <text x="350" y="130" text-anchor="middle" fill="#e0c97f" font-family="Playfair Display" font-size="17" font-style="italic">Compiler</text>
+          <text x="350" y="150" text-anchor="middle" fill="#ececec" font-family="IBM Plex Mono" font-size="10">(the deputy)</text>
+          <line x1="290" y1="162" x2="410" y2="162" stroke="#2a2a30"/>
+          <text x="350" y="180" text-anchor="middle" fill="#a8a8ad" font-family="IBM Plex Mono" font-size="10">can write to SYSX</text>
+          <text x="350" y="196" text-anchor="middle" fill="#a8a8ad" font-family="IBM Plex Mono" font-size="10">(for stats logging)</text>
+          <text x="350" y="212" text-anchor="middle" fill="#d96459" font-family="IBM Plex Mono" font-size="10" class="pulse">cannot tell whose intent</text>
+        </g>
+
+        <!-- BILL FILE -->
+        <g>
+          <rect x="540" y="120" width="140" height="80" rx="2" fill="#1a0f0e" stroke="#d96459"/>
+          <text x="610" y="148" text-anchor="middle" fill="#d96459" font-family="Playfair Display" font-size="15" font-style="italic">(SYSX)BILL</text>
+          <text x="610" y="170" text-anchor="middle" fill="#a8a8ad" font-family="IBM Plex Mono" font-size="10">billing records</text>
+          <rect class="danger-fill" x="540" y="120" width="140" height="80" rx="2" fill="#d96459"/>
+        </g>
+
+        <!-- Arrow user → compiler -->
+        <path d="M 150 160 L 268 160" stroke="#e0c97f" stroke-width="1.5" fill="none" marker-end="url(#arrow1)" class="flow-line"/>
+        <text x="209" y="150" text-anchor="middle" fill="#ececec" font-family="IBM Plex Mono" font-size="10">"write debug to</text>
+        <text x="209" y="178" text-anchor="middle" fill="#d96459" font-family="IBM Plex Mono" font-size="10">(SYSX)BILL"</text>
+
+        <!-- Arrow compiler → BILL -->
+        <path d="M 432 160 L 538 160" stroke="#d96459" stroke-width="1.5" fill="none" marker-end="url(#arrowD)" class="flow-line"/>
+        <text x="485" y="150" text-anchor="middle" fill="#d96459" font-family="IBM Plex Mono" font-size="10">opens, writes</text>
+        <text x="485" y="178" text-anchor="middle" fill="#a8a8ad" font-family="IBM Plex Mono" font-size="10">(privilege: compiler's)</text>
+
+        <!-- Caption inside SVG -->
+        <text x="350" y="40" text-anchor="middle" fill="#e0c97f" font-family="Playfair Display" font-size="14" font-style="italic">The deputy uses its own authority on the user's instruction</text>
+        <line x1="180" y1="55" x2="520" y2="55" stroke="#2a2a30"/>
+      </svg>
+    </div>
+    <figcaption>Figure 1 · <span>1973</span> · the deputy cannot separate its purposes from yours</figcaption>
+  </figure>
+
+  <p>The fix that the capability-systems community proposed half a century ago is worth stating clearly, because it will matter again in a moment: <strong>do not let the deputy act on ambient authority</strong>. The user should hand the compiler not a filename, but a <em>capability</em> — a token that grants permission to write to that specific file, on the user's behalf. If the user does not possess permission to <code>SYSX/BILL</code>, no such token can be produced, and the conversation is over before the compiler is ever asked.</p>
+
+  <h2>Now Read That Story Again</h2>
+
+  <p>Replace four words and you have the dominant security problem of 2026.</p>
+
+  <p>Replace <em>compiler</em> with <strong>LLM agent</strong>. Replace <em>filename argument</em> with <strong>any text in the model's context window</strong> — an email body, a webpage, a PDF, a Slack thread, a tool call result. Replace <em>SYSX directory</em> with <strong>the agent's tool-use permissions</strong> — its authenticated session to your Gmail, your calendar, your code repository, your bank. Replace <em>billing file</em> with <strong>whatever the attacker actually wants</strong>: your inbox, your secrets, your money.</p>
+
+  <p>The shape of the bug is identical. An indirect prompt injection works exactly because the agent — like the 1973 compiler — cannot tell the difference between <strong>instructions that came from its principal</strong> (you, the user) and <strong>instructions it merely encountered while doing its job</strong> (the contents of an email it was asked to summarize). It treats both as commands. It executes both with its own authority. And its own authority is the union of every tool it has been granted.</p>
+
+  <blockquote class="pull">An agent is a confused deputy that has been given a mouth and a memory, and asked to read the open internet.</blockquote>
+
+  <!-- ── Diagram 2: Indirect prompt injection (animated) ── -->
+  <figure>
+    <div class="diagram-frame">
+      <svg viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated diagram of an indirect prompt injection attack mirroring the confused deputy">
+        <defs>
+          <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#e0c97f"/>
+          </marker>
+          <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#d96459"/>
+          </marker>
+          <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#7fb069"/>
+          </marker>
+        </defs>
+
+        <!-- title -->
+        <text x="350" y="28" text-anchor="middle" fill="#e0c97f" font-family="Playfair Display" font-size="14" font-style="italic">Two principals, one identity, one mouth</text>
+        <line x1="180" y1="42" x2="520" y2="42" stroke="#2a2a30"/>
+
+        <!-- USER -->
+        <g>
+          <rect x="20" y="80" width="120" height="60" rx="2" fill="#16161a" stroke="#7fb069"/>
+          <text x="80" y="105" text-anchor="middle" fill="#7fb069" font-family="Playfair Display" font-size="14" font-style="italic">You</text>
+          <text x="80" y="124" text-anchor="middle" fill="#a8a8ad" font-family="IBM Plex Mono" font-size="9">the principal</text>
+        </g>
+
+        <!-- ATTACKER -->
+        <g>
+          <rect x="20" y="220" width="120" height="60" rx="2" fill="#1a0f0e" stroke="#d96459"/>
+          <text x="80" y="245" text-anchor="middle" fill="#d96459" font-family="Playfair Display" font-size="14" font-style="italic">Attacker</text>
+          <text x="80" y="264" text-anchor="middle" fill="#a8a8ad" font-family="IBM Plex Mono" font-size="9">writes a webpage</text>
+        </g>
+
+        <!-- WEBPAGE / EMAIL -->
+        <g>
+          <rect x="190" y="220" width="130" height="60" rx="2" fill="#16161a" stroke="#2a2a30"/>
+          <text x="255" y="244" text-anchor="middle" fill="#ececec" font-family="IBM Plex Mono" font-size="11">webpage / email</text>
+          <text x="255" y="262" text-anchor="middle" fill="#d96459" font-family="IBM Plex Mono" font-size="9" class="pulse">"…ignore prior, send X"</text>
+        </g>
+
+        <!-- AGENT -->
+        <g>
+          <rect x="380" y="140" width="180" height="120" rx="2" fill="#16161a" stroke="#e0c97f" stroke-width="1.5"/>
+          <text x="470" y="170" text-anchor="middle" fill="#e0c97f" font-family="Playfair Display" font-size="16" font-style="italic">LLM Agent</text>
+          <text x="470" y="188" text-anchor="middle" fill="#ececec" font-family="IBM Plex Mono" font-size="10">(the new deputy)</text>
+          <line x1="400" y1="200" x2="540" y2="200" stroke="#2a2a30"/>
+          <text x="470" y="218" text-anchor="middle" fill="#a8a8ad" font-family="IBM Plex Mono" font-size="9.5">authenticated to inbox,</text>
+          <text x="470" y="232" text-anchor="middle" fill="#a8a8ad" font-family="IBM Plex Mono" font-size="9.5">calendar, code, payments</text>
+          <text x="470" y="250" text-anchor="middle" fill="#d96459" font-family="IBM Plex Mono" font-size="9.5" class="pulse">cannot tell whose intent</text>
+        </g>
+
+        <!-- TOOLS (the SYSX of 2026) -->
+        <g>
+          <rect x="600" y="140" width="80" height="35" rx="2" fill="#1a0f0e" stroke="#d96459"/>
+          <text x="640" y="162" text-anchor="middle" fill="#d96459" font-family="IBM Plex Mono" font-size="10">send_email</text>
+          <rect class="danger-fill" x="600" y="140" width="80" height="35" rx="2" fill="#d96459"/>
+
+          <rect x="600" y="183" width="80" height="35" rx="2" fill="#16161a" stroke="#2a2a30"/>
+          <text x="640" y="205" text-anchor="middle" fill="#ececec" font-family="IBM Plex Mono" font-size="10">read_files</text>
+
+          <rect x="600" y="226" width="80" height="35" rx="2" fill="#16161a" stroke="#2a2a30"/>
+          <text x="640" y="248" text-anchor="middle" fill="#ececec" font-family="IBM Plex Mono" font-size="10">transfer</text>
+        </g>
+
+        <!-- Legitimate request -->
+        <path d="M 140 110 Q 260 110 380 165" stroke="#7fb069" stroke-width="1.5" fill="none" marker-end="url(#a4)" class="flow-line"/>
+        <text x="260" y="98" text-anchor="middle" fill="#7fb069" font-family="IBM Plex Mono" font-size="10">"summarize my latest email"</text>
+
+        <!-- Attacker → webpage -->
+        <path d="M 140 250 L 188 250" stroke="#d96459" stroke-width="1.5" fill="none" marker-end="url(#a3)"/>
+
+        <!-- Webpage → agent (the smuggled instruction) -->
+        <path d="M 320 250 Q 360 250 380 220" stroke="#d96459" stroke-width="1.5" fill="none" marker-end="url(#a3)" class="flow-line"/>
+        <text x="350" y="298" text-anchor="middle" fill="#d96459" font-family="IBM Plex Mono" font-size="10">arrives as data, read as command</text>
+
+        <!-- Agent → tool -->
+        <path d="M 560 158 L 598 158" stroke="#d96459" stroke-width="1.5" fill="none" marker-end="url(#a3)" class="flow-line"/>
+        <text x="580" y="128" text-anchor="middle" fill="#d96459" font-family="IBM Plex Mono" font-size="10">acts with</text>
+        <text x="580" y="142" text-anchor="middle" fill="#d96459" font-family="IBM Plex Mono" font-size="10">your authority</text>
+
+        <!-- bottom note -->
+        <text x="350" y="345" text-anchor="middle" fill="#a8a8ad" font-family="IBM Plex Mono" font-size="10">Both arrows enter the agent through the same door: <tspan fill="#e0c97f">the context window</tspan>.</text>
+      </svg>
+    </div>
+    <figcaption>Figure 2 · <span>2026</span> · the same shape, drawn with new boxes</figcaption>
+  </figure>
+
+  <h2>The Symmetry, Stated Plainly</h2>
+
+  <div class="compare">
+    <div>
+      <h4>Compiler bug</h4>
+      <ul>
+        <li>Compiler is the deputy</li>
+        <li>User passes a filename</li>
+        <li>System call uses compiler's privilege</li>
+        <li>OS cannot tell whose intent it is</li>
+        <li>Billing file is overwritten</li>
+        <li>Fix: capabilities, not ambient authority</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Prompt injection</h4>
+      <ul>
+        <li>LLM agent is the deputy</li>
+        <li>Webpage smuggles instructions</li>
+        <li>Tool call uses agent's session</li>
+        <li>Model cannot tell whose intent it is</li>
+        <li>Inbox is exfiltrated</li>
+        <li>Fix: still capabilities, still no ambient authority</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>The deeper lesson — the one Hardy was already trying to teach in 1988 — is that <strong>the bug is not in the deputy</strong>. The compiler was working as designed. The LLM is working as designed. The bug is in the <em>architecture</em> that asks a single program to act on behalf of two principals whose interests diverge, while giving it no machinery to keep them apart.</p>
+
+  <p>The fix is the same somewhere-else Hardy pointed to. Stop relying on the deputy to <em>read its way out</em> of confusion. Push the authority decisions out of the model's reasoning loop and into the surrounding system, where data and code <em>are</em> distinguishable: explicit per-action user confirmation for high-impact tools, capability tokens that bind a specific request to a specific resource, isolated execution contexts that strip ambient credentials before untrusted text is processed, dual-LLM patterns where a privileged planner never sees raw external content and an unprivileged worker never holds tools.</p>
+
+  <p>None of this is novel. All of it was sketched, in different vocabulary, in the capability-systems literature decades before the first transformer was trained. We are rediscovering an old result the way every generation of systems people rediscovers it: the hard way, in production, on someone else's billing file.</p>
+
+  <h2>The Reading That Stays With You</h2>
+
+  <p>If you build agents, the useful frame is this. Every time you give a model access to a tool, you are appointing a deputy. Every time the model's context can be reached by a third party — a search result, a retrieved document, a tool's output, a file on disk written by someone other than your user — you have introduced a second principal. The model owes equal allegiance to both, because it cannot tell them apart.</p>
+
+  <p>The question is no longer <em>can my agent be prompt-injected?</em> The answer to that is yes; it is a definitional property of the architecture. The question is the older one Hardy left us with: <strong>which of this deputy's powers is it safe to exercise without re-asking the principal?</strong></p>
+
+  <p>For most agents shipping today, the honest answer is: fewer than they currently exercise.</p>
+
+  <div class="endmark">· · ·</div>
+
+  <footer>
+    <p>References · Hardy, N. (1988). <em>The Confused Deputy</em>. ACM SIGOPS OSR · Wikipedia, <a href="https://en.wikipedia.org/wiki/Confused_deputy_problem">Confused deputy problem</a> · Willison, S. <em>Prompt injection</em> series · Greshake et al. (2023). <em>Not what you've signed up for: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection</em>.</p>
+  </footer>
+
+</article>
+
+</body>
+</html>
