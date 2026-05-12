@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Designing for Security: Revisiting Saltzer & Schroeder — Md Omar Faroque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e10;
+    --bg-elev: #16161a;
+    --bg-card: #1a1a1f;
+    --ink: #e8e6e1;
+    --ink-dim: #a8a6a1;
+    --ink-faint: #6b6963;
+    --rule: #2a2a30;
+    --accent: #d4503e;
+    --accent-soft: #d4503e22;
+    --warn: #d4a73e;
+    --ok: #6ba368;
+    --blue: #6b94c4;
+    --serif: 'Playfair Display', Georgia, serif;
+    --mono: 'DM Mono', 'IBM Plex Mono', monospace;
+    --sans: 'DM Sans', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+      radial-gradient(rgba(255,255,255,0.012) 1px, transparent 1px);
+    background-size: 4px 4px, 4px 4px;
+    background-position: 0 0, 2px 2px;
+  }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 80px 28px 120px; }
+
+  .kicker {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 28px;
+  }
+  .kicker .sep { color: var(--ink-faint); margin: 0 10px; }
+
+  h1.title {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 54px;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin: 0 0 24px;
+  }
+  h1.title em { font-style: italic; color: var(--ink-dim); }
+
+  .dek {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.5;
+    color: var(--ink-dim);
+    margin-bottom: 64px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--rule);
+    max-width: 640px;
+  }
+
+  .byline {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    margin-bottom: 64px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .byline a { color: var(--ink-dim); text-decoration: none; border-bottom: 1px dotted var(--ink-faint); }
+  .byline .sep { color: var(--ink-faint); margin: 0 8px; }
+
+  article p { margin: 0 0 22px; }
+
+  article p.lede::first-letter {
+    font-family: var(--serif);
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 64px;
+    line-height: 0.85;
+    float: left;
+    margin: 6px 12px 0 0;
+  }
+
+  h2.section {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 30px;
+    line-height: 1.2;
+    margin: 64px 0 6px;
+    letter-spacing: -0.005em;
+  }
+  h2.section .num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.16em;
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+  h2.section .one-liner {
+    display: block;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--ink-dim);
+    margin-top: 6px;
+    letter-spacing: 0;
+  }
+
+  blockquote.pull {
+    margin: 28px 0;
+    padding: 4px 0 4px 22px;
+    border-left: 2px solid var(--accent);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 20px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+
+  .echoes {
+    background: var(--bg-elev);
+    border: 1px solid var(--rule);
+    padding: 18px 22px;
+    margin: 24px 0;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--ink-dim);
+  }
+  .echoes .label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .echoes code { color: var(--ink); }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--bg-elev);
+    padding: 2px 6px;
+    border-radius: 2px;
+    color: var(--accent);
+  }
+
+  a { color: var(--accent); }
+  em { font-style: italic; }
+
+  .principles-index {
+    background: var(--bg-elev);
+    border: 1px solid var(--rule);
+    padding: 28px 32px;
+    margin: 40px 0;
+  }
+  .principles-index .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .principles-index ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: principle;
+  }
+  .principles-index li {
+    counter-increment: principle;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--rule);
+    display: flex;
+    gap: 14px;
+    align-items: baseline;
+  }
+  .principles-index li:last-child { border-bottom: none; }
+  .principles-index li::before {
+    content: counter(principle, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    flex-shrink: 0;
+    width: 24px;
+  }
+  .principles-index .name {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--ink);
+    font-size: 17px;
+  }
+  .principles-index .gloss {
+    color: var(--ink-dim);
+    font-size: 13px;
+    margin-left: auto;
+    text-align: right;
+    font-family: var(--mono);
+  }
+  @media (max-width: 560px) {
+    .principles-index li { flex-wrap: wrap; }
+    .principles-index .gloss { margin-left: 38px; text-align: left; width: 100%; }
+  }
+
+  .divider {
+    text-align: center;
+    color: var(--ink-faint);
+    letter-spacing: 1em;
+    margin: 64px 0 48px;
+    font-size: 12px;
+  }
+
+  ul.closers {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 22px;
+  }
+  ul.closers li {
+    padding: 8px 0 8px 20px;
+    position: relative;
+    color: var(--ink-dim);
+  }
+  ul.closers li::before {
+    content: "—";
+    color: var(--accent);
+    position: absolute;
+    left: 0;
+    font-family: var(--mono);
+  }
+
+  footer {
+    margin-top: 80px;
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-faint);
+    letter-spacing: 0.06em;
+    text-align: center;
+  }
+  footer .footer-name {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink);
+    letter-spacing: 0;
+    margin-bottom: 8px;
+  }
+  footer .footer-contact {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-faint);
+    letter-spacing: 0.06em;
+  }
+  footer a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); }
+  footer a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 56px 22px 90px; }
+    h1.title { font-size: 38px; }
+    .dek { font-size: 18px; margin-bottom: 40px; }
+    h2.section { font-size: 24px; }
+    blockquote.pull { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1 class="title">Designing for Security: <em>Revisiting Saltzer &amp; Schroeder</em></h1>
+
+  <p class="dek">A reflection on the foundations of protection mechanisms, fifty years on — and why every interesting failure in modern systems is still a violation of one of eight principles written in 1975.</p>
+
+  <article>
+
+  <h2 class="section" style="margin-top:0;"><span class="num">§ Prelude</span>A Classic That Still Shapes Modern Security</h2>
+
+  <p class="lede">In 1975, Jerome Saltzer and Michael Schroeder published one of the most influential papers in computer security: <em>The Protection of Information in Computer Systems</em>. Five decades later, it remains a cornerstone of secure system design — the load-bearing vocabulary that the field still uses to argue with itself.</p>
+
+  <p>What's remarkable is how cleanly the eight principles map forward. They were written in an era of mainframes and time-sharing systems, but they describe the failure modes of microservices, identity systems, container runtimes, zero-trust networks, and increasingly, AI agents. The vocabulary is fifty years old. The problems are this morning.</p>
+
+  <p>This post revisits the principles not as historical artifacts but as working tools — the kind you can hold up against any system and ask: <em>which of these am I honoring, which am I trading away, and do I know why?</em></p>
+
+  <div class="principles-index">
+    <div class="label">The Eight, In Order</div>
+    <ol>
+      <li><span class="name">Economy of mechanism</span><span class="gloss">keep it small</span></li>
+      <li><span class="name">Fail-safe defaults</span><span class="gloss">default deny</span></li>
+      <li><span class="name">Complete mediation</span><span class="gloss">check every access</span></li>
+      <li><span class="name">Open design</span><span class="gloss">no obscurity</span></li>
+      <li><span class="name">Separation of privilege</span><span class="gloss">two keys</span></li>
+      <li><span class="name">Least privilege</span><span class="gloss">minimum authority</span></li>
+      <li><span class="name">Least common mechanism</span><span class="gloss">don't share</span></li>
+      <li><span class="name">Psychological acceptability</span><span class="gloss">make it usable</span></li>
+    </ol>
+  </div>
+
+  <h2 class="section"><span class="num">§ 01</span>Economy of Mechanism<span class="one-liner">Keep it simple. Keep it small.</span></h2>
+
+  <p>Security thrives on simplicity. The more complex a mechanism, the more places bugs can hide — especially the bugs that only surface under malicious use, never during normal operation. You cannot review what you cannot read.</p>
+
+  <div class="echoes">
+    <span class="label">Modern Echoes</span>
+    Minimal attack surface. Small trusted computing bases. Microkernels. Terse IAM policies. A single policy engine instead of authorization logic scattered across four files.
+  </div>
+
+  <blockquote class="pull">
+    Simplicity isn't elegance — it's defense.
+  </blockquote>
+
+  <h2 class="section"><span class="num">§ 02</span>Fail-Safe Defaults<span class="one-liner">Deny by default. Permit explicitly.</span></h2>
+
+  <p>If you forget to configure something, it should remain secure. Systems that default to <em>allow</em> are one misconfiguration away from a postmortem. Saltzer and Schroeder's argument was psychological: permissive failures are silent, deny-by-default failures are loud, and loud failures get fixed.</p>
+
+  <div class="echoes">
+    <span class="label">Modern Echoes</span>
+    Private-by-default cloud storage. Zero-trust networking. Deny-all firewall baselines. Opt-in OAuth scopes. MCP connectors that grant nothing until the user picks specific capabilities.
+  </div>
+
+  <blockquote class="pull">
+    Mistakes should fail closed, not open.
+  </blockquote>
+
+  <h2 class="section"><span class="num">§ 03</span>Complete Mediation<span class="one-liner">Check every access, every time.</span></h2>
+
+  <p>No caching permissions without careful invalidation. No assuming a previous check still applies. The token tells you <em>who</em>; the policy engine has to tell you <em>still?</em></p>
+
+  <div class="echoes">
+    <span class="label">Modern Echoes</span>
+    Token validation on every API call. Continuous authorization. Revocation-aware access control. Agent sessions that re-check policy on every tool call instead of trusting the token they were issued an hour ago.
+  </div>
+
+  <blockquote class="pull">
+    Every request is a new question.
+  </blockquote>
+
+  <h2 class="section"><span class="num">§ 04</span>Open Design<span class="one-liner">Security should not depend on the secrecy of the mechanism.</span></h2>
+
+  <p>The design can be public. The keys must remain secret. A system whose security depends on the secrecy of its design becomes insecure the moment that design is no longer secret — and designs always leak.</p>
+
+  <div class="echoes">
+    <span class="label">Modern Echoes</span>
+    Open-source cryptography. Public algorithms (AES, RSA, SHA). Transparent security reviews. The professional contempt for security through obscurity.
+  </div>
+
+  <blockquote class="pull">
+    If your system breaks when someone reads the design doc, it wasn't secure.
+  </blockquote>
+
+  <h2 class="section"><span class="num">§ 05</span>Separation of Privilege<span class="one-liner">Require two or more conditions for access.</span></h2>
+
+  <p>Two keys are harder to steal than one. A mechanism that requires two independent credentials is, all else equal, more robust than one that requires one.</p>
+
+  <div class="echoes">
+    <span class="label">Modern Echoes</span>
+    Multi-factor authentication. Dual-control financial approvals. Multi-party authorization for sensitive operations. Kubernetes admission combined with RBAC combined with network policies. For agents: narrow scoped tokens per action rather than one omnibus token holding every capability the agent might ever need.
+  </div>
+
+  <blockquote class="pull">
+    One failure shouldn't compromise the system.
+  </blockquote>
+
+  <h2 class="section"><span class="num">§ 06</span>Least Privilege<span class="one-liner">Give every user and program the minimum permissions necessary.</span></h2>
+
+  <p>Nothing more. And capabilities should be acquired and released, not held continuously — a program that needs to write one file for one second shouldn't run for an hour with write access.</p>
+
+  <div class="echoes">
+    <span class="label">Modern Echoes</span>
+    IAM roles scoped to a single task. Container sandboxing. Fine-grained API permissions. Just-in-time credential issuance. <code>SPIFFE</code> workload identity. For AI agents this is the principle violated most flagrantly: the easiest way to make an agent <em>capable</em> is to give it broad authority and trust it to use that authority sparingly. The trust is misplaced.
+  </div>
+
+  <blockquote class="pull">
+    The smaller the blast radius, the safer the system.
+  </blockquote>
+
+  <h2 class="section"><span class="num">§ 07</span>Least Common Mechanism<span class="one-liner">Avoid shared components whenever possible.</span></h2>
+
+  <p>Shared mechanisms create shared vulnerabilities. Every component that two users both depend on is a place where one can leak information to or about the other.</p>
+
+  <div class="echoes">
+    <span class="label">Modern Echoes</span>
+    Tenant isolation. Per-user encryption keys. Dedicated caches and queues per service. The side-channel literature in general. Multitenancy is fundamentally a violation of this principle, justified by economics — which is fine, as long as the trade is made knowingly.
+  </div>
+
+  <blockquote class="pull">
+    If everyone depends on it, everyone can be hurt by it.
+  </blockquote>
+
+  <h2 class="section"><span class="num">§ 08</span>Psychological Acceptability<span class="one-liner">Security must be usable.</span></h2>
+
+  <p>If the mechanism is hard to use, users will work around it — and the workarounds become the new attack surface. The consent dialog that nobody reads is not a security control; it is a liability that pretends to be a security control.</p>
+
+  <div class="echoes">
+    <span class="label">Modern Echoes</span>
+    Clear permission prompts. Password managers. Human-readable MFA flows. Consent UIs that speak the user's language rather than the protocol's. The OAuth scope string <code>calendar.events.write</code> is not what the user is consenting to; <em>let the assistant move my meetings</em> is. The gap between those two is where social engineering lives.
+  </div>
+
+  <blockquote class="pull">
+    Usability is not a luxury. It is a security requirement.
+  </blockquote>
+
+  <div class="divider">·  ·  ·</div>
+
+  <h2 class="section" style="margin-top:24px;"><span class="num">§ Coda</span>Closing Thoughts</h2>
+
+  <p>Saltzer and Schroeder didn't just give us a list of rules. They gave us a mindset — a way of thinking about security that survives every technology shift the field has been through, and looks poised to survive the next one too.</p>
+
+  <p>Even in today's world of AI agents, distributed systems, and cloud-native architectures, these principles remain the backbone of secure design. They remind us that:</p>
+
+  <ul class="closers">
+    <li>Security is not a feature. It is a discipline.</li>
+    <li>Good design prevents entire classes of vulnerability, not one bug at a time.</li>
+    <li>The simplest ideas often have the longest lifespan.</li>
+  </ul>
+
+  <p>The principles sometimes conflict with each other — least common mechanism wants you to duplicate, economy of mechanism wants you to deduplicate. That is not a bug in the framework. It <em>is</em> the framework. The skill is in the judgment, and the judgment is built by reading the paper, sitting with it, and then looking at the system in front of you and asking which principle each decision honors and which it trades away.</p>
+
+  <p>If you are building systems that handle sensitive data, these principles aren't optional. They are the foundation.</p>
+
+  <p>The paper is freely available at <a href="https://web.mit.edu/Saltzer/www/publications/protection/">web.mit.edu/Saltzer/www/publications/protection</a>. It takes about an hour to read. It pays that hour back for the rest of your career.</p>
+
+  </article>
+
+  <footer>
+    <div class="footer-name">Md Omar Faroque</div>
+    <div class="footer-contact">Available for consultation · omarfdotandroidatgmaildotcom</div>
+  </footer>
+
+</div>
+</body>
+</html>
