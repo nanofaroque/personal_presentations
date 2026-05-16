@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Token at the Edge — On Transaction Tokens and the End of Inward-Facing Trust</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0c0c0e;
+    --ink-2: #131318;
+    --ink-3: #1a1a22;
+    --bone: #e8e3d6;
+    --bone-dim: #b8b3a6;
+    --bone-faint: #6e6a5e;
+    --rust: #c97b5a;
+    --rust-deep: #a45a3a;
+    --gold: #d4b878;
+    --sage: #7a9583;
+    --line: rgba(232, 227, 214, 0.12);
+    --line-strong: rgba(232, 227, 214, 0.22);
+    --serif: 'Playfair Display', Georgia, serif;
+    --sans: 'DM Sans', -apple-system, sans-serif;
+    --mono: 'DM Mono', 'SF Mono', Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--ink);
+    color: var(--bone);
+    font-family: var(--sans);
+    font-weight: 300;
+    font-size: 17px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-image:
+      radial-gradient(ellipse at top, rgba(201, 123, 90, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom, rgba(122, 149, 131, 0.03) 0%, transparent 60%);
+    background-attachment: fixed;
+  }
+
+  ::selection { background: var(--rust); color: var(--ink); }
+
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    z-index: 100;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  /* === Hero === */
+  .hero {
+    padding-top: 80px;
+    margin-bottom: 72px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    width: 28px;
+    height: 1px;
+    background: var(--rust);
+  }
+
+  h1.title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(38px, 6vw, 64px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--bone);
+    margin-bottom: 36px;
+  }
+
+  h1.title em {
+    font-style: italic;
+    color: var(--gold);
+    font-weight: 400;
+  }
+
+  .byline {
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--bone-faint);
+    line-height: 1.7;
+  }
+
+  .byline strong {
+    color: var(--bone);
+    font-weight: 500;
+  }
+
+  /* === Editor's note === */
+  .editors-note {
+    margin: 0 0 64px;
+    padding: 28px 32px;
+    background: var(--ink-2);
+    border-left: 2px solid var(--gold);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--bone-dim);
+  }
+
+  .editors-note .note-label {
+    display: block;
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+
+  .editors-note p {
+    color: var(--bone-dim);
+  }
+
+  .editors-note em {
+    font-style: italic;
+    color: var(--bone);
+  }
+
+  .editors-note strong {
+    color: var(--bone);
+    font-weight: 500;
+  }
+
+  .editors-note a {
+    color: var(--gold);
+    text-decoration: none;
+    border-bottom: 1px solid var(--line-strong);
+    transition: border-color 0.2s, color 0.2s;
+    word-break: break-all;
+  }
+
+  .editors-note a:hover {
+    color: var(--rust);
+    border-bottom-color: var(--rust);
+  }
+
+  .editors-note code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--ink-3);
+    color: var(--gold);
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+  }
+
+  /* === Body typography === */
+  .body p {
+    margin-bottom: 28px;
+    color: var(--bone);
+  }
+
+  .body p.lede::first-letter {
+    font-family: var(--serif);
+    font-style: italic;
+    float: left;
+    font-size: 88px;
+    line-height: 0.85;
+    padding: 8px 14px 0 0;
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  .body h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 32px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin: 88px 0 32px;
+    color: var(--bone);
+    position: relative;
+    padding-left: 0;
+  }
+
+  .body h2 .num {
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    color: var(--rust);
+    display: block;
+    margin-bottom: 14px;
+    font-weight: 400;
+  }
+
+  .body h3 {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 22px;
+    line-height: 1.35;
+    color: var(--gold);
+    margin: 56px 0 20px;
+  }
+
+  .body h4 {
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin: 40px 0 16px;
+  }
+
+  .body strong {
+    color: var(--bone);
+    font-weight: 500;
+  }
+
+  .body em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .body code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--ink-3);
+    color: var(--rust);
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+  }
+
+  .body a {
+    color: var(--gold);
+    text-decoration: none;
+    border-bottom: 1px solid var(--line-strong);
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .body a:hover {
+    color: var(--rust);
+    border-bottom-color: var(--rust);
+  }
+
+  /* === Pull quote === */
+  .pullquote {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 28px;
+    line-height: 1.4;
+    color: var(--bone);
+    margin: 64px 0;
+    padding: 0 0 0 32px;
+    border-left: 2px solid var(--rust);
+    position: relative;
+  }
+
+  .pullquote::before {
+    content: '"';
+    font-size: 120px;
+    color: var(--rust);
+    position: absolute;
+    left: -12px;
+    top: -32px;
+    opacity: 0.2;
+    font-family: var(--serif);
+  }
+
+  .pullquote cite {
+    display: block;
+    margin-top: 18px;
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--bone-faint);
+  }
+
+  /* === Code blocks === */
+  pre {
+    background: var(--ink-2);
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--rust);
+    padding: 24px 28px;
+    margin: 32px 0;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--bone-dim);
+    position: relative;
+  }
+
+  pre::before {
+    content: attr(data-lang);
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--bone-faint);
+  }
+
+  pre .k { color: var(--rust); }
+  pre .s { color: var(--sage); }
+  pre .n { color: var(--gold); }
+  pre .c { color: var(--bone-faint); font-style: italic; }
+  pre .p { color: var(--bone-dim); }
+
+  /* === Threat table === */
+  .threat-grid {
+    margin: 40px 0;
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .threat-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 32px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .threat-row .threat-name {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 19px;
+    color: var(--rust);
+    line-height: 1.3;
+  }
+
+  .threat-row .threat-kill {
+    color: var(--bone);
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  /* === Callout === */
+  .callout {
+    background: var(--ink-2);
+    border: 1px solid var(--line);
+    padding: 32px;
+    margin: 48px 0;
+    position: relative;
+  }
+
+  .callout::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 3px;
+    height: 28px;
+    background: var(--gold);
+  }
+
+  .callout .callout-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 14px;
+  }
+
+  .callout p {
+    margin-bottom: 14px;
+    color: var(--bone-dim);
+    font-size: 16px;
+  }
+
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* === Diagram === */
+  .diagram-wrap {
+    margin: 56px -40px;
+    padding: 48px 40px;
+    background: var(--ink-2);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .diagram-caption {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--bone-faint);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .diagram-caption::before {
+    content: 'Fig.';
+    color: var(--rust);
+    font-style: italic;
+    font-family: var(--serif);
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 14px;
+  }
+
+  .diagram-wrap svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .diagram-note {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--bone-faint);
+    margin-top: 24px;
+    text-align: center;
+  }
+
+  /* === Lists === */
+  .body ul, .body ol {
+    margin: 24px 0 32px;
+    padding-left: 0;
+    list-style: none;
+  }
+
+  .body li {
+    padding-left: 28px;
+    margin-bottom: 14px;
+    position: relative;
+    color: var(--bone);
+  }
+
+  .body ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 13px;
+    width: 14px;
+    height: 1px;
+    background: var(--rust);
+  }
+
+  .body ol {
+    counter-reset: ol-counter;
+  }
+
+  .body ol li {
+    counter-increment: ol-counter;
+    padding-left: 38px;
+  }
+
+  .body ol li::before {
+    content: counter(ol-counter, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 2px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--rust);
+    letter-spacing: 0.05em;
+  }
+
+  /* === Closing === */
+  .ornament {
+    text-align: center;
+    margin: 80px 0 96px;
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--rust);
+    font-size: 24px;
+    letter-spacing: 0.5em;
+  }
+
+  @media (max-width: 640px) {
+    .container { padding: 0 20px; }
+    .threat-row { grid-template-columns: 1fr; gap: 8px; }
+    .diagram-wrap { margin: 40px -20px; padding: 32px 20px; }
+    h1.title { font-size: 38px; }
+    .body p.lede::first-letter { font-size: 64px; }
+    .pullquote { font-size: 22px; padding-left: 20px; }
+    .editors-note { padding: 20px 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="eyebrow">Identity &middot; Authorization &middot; Distributed Systems</div>
+    <h1 class="title">The Token at the Edge,<br/>and the End of Inward-Facing <em>Trust</em>.</h1>
+    <div class="byline">
+      <strong>Md Omar Faroque</strong> &nbsp;&middot;&nbsp; Principal Engineer
+    </div>
+  </section>
+
+  <article class="body">
+
+    <div class="editors-note">
+      <span class="note-label">A note on framing</span>
+      <p style="margin-bottom: 14px;">I'm reading <a href="https://www.ietf.org/archive/id/draft-ietf-oauth-transaction-tokens-08.html" target="_blank" rel="noopener">draft-ietf-oauth-transaction-tokens-08</a> and trying to share my understanding in a simpler, shorter way. The draft is intentionally a framework — it defines concepts (transaction claims, requester context, workload identity) but leaves most implementation choices open.</p>
+      <p style="margin-bottom: 14px;">To keep this readable, I commit to <em>one concrete profile</em> of the spec throughout. Specifically: JWT format, RFC 8693 token-exchange minting, a centralized TTS, trust-domain-wide audience, and short minute-scale lifetimes. <strong>None of these are normative.</strong> The draft permits CWT or other structured formats; direct or workload-initiated issuance; distributed or per-cluster TTS deployments; service-specific or multiple audiences; and any lifetime the implementer judges appropriate.</p>
+      <p style="margin-bottom: 0;">The claim names <code>tctx</code> and <code>rctx</code> are normative — defined in §10.2 of the draft and registered with IANA in §16.2 — so I use them throughout. Treat the wire formats below as one defensible profile of the spec, not as the only one.</p>
+    </div>
+
+    <p class="lede">There is a quiet lie at the heart of most production microservice architectures, and it sounds almost reasonable when you first hear it. The lie is this: <em>once a request crosses the gateway, we trust it</em>. The access token authenticated the user, the WAF inspected the payload, the rate limiter approved the flow — and so by the time the request reaches the order service or the patient service or the ledger, the request has earned its way in. The interior is friendly. The hard part is over.</p>
+
+    <p>It is not over. It has barely begun. A single external API call fans out, in any reasonably mature system, into dozens of internal workload invocations crossing trust boundaries that exist on paper and not much else. Each hop trusts the previous hop, which trusted the hop before it, which trusted the API gateway, which trusted the access token. The chain of trust is exactly that — a chain — and a chain has the strength of its weakest link, which today is whichever workload was compromised most recently through a supply-chain attack, a credential leak, a malicious dependency, or a bug nobody caught in code review.</p>
+
+    <p>The OAuth 2.0 access token was designed to solve a problem at the <em>edge</em>: how does a third-party client prove that a user delegated some authority to it? It does this beautifully. It was never designed to be the authorization primitive that propagates through a fifteen-hop internal call chain inside a trust domain. We made it do that because we had nothing else. The IETF <code>oauth</code> working group has now proposed something else, and it is worth understanding deeply.</p>
+
+    <p>This piece is about <strong>Transaction Tokens</strong> — Txn-Tokens, in the draft's notation — and the architectural correction they represent. I want to walk through what they are, what they actually solve, where they fit alongside SPIFFE and mTLS and the rest of the zero-trust toolkit, and why I think they will become quietly load-bearing in the next generation of internal security architecture. I will use a stock trade and a patient records query as the worked examples, because abstract diagrams convince no one who has shipped to production.</p>
+
+    <h2><span class="num">§ 01</span>What we have actually been doing wrong</h2>
+
+    <p>Begin with a specific failure. A user opens a trading app and submits an order to buy one hundred shares of MSFT. The mobile client sends the request, with a bearer access token in the Authorization header, to <code>api.broker.example</code>. The gateway accepts the token, verifies its signature against the IdP's JWKS, and forwards the request inward.</p>
+
+    <p>What does "forwards inward" mean? In most architectures I have audited, it means one of two things. Either the gateway strips the user's access token and re-authenticates as itself to internal services — losing the user identity entirely, which downstream services then have to <em>reconstruct from headers</em>, which is a category of bug that has shipped to production at every major company on earth. Or the gateway forwards the user's access token unchanged, deeper and deeper into the mesh, where it sits in request logs and in-flight buffers and tracing spans waiting to be exfiltrated.</p>
+
+    <p>Either way, four specific things become possible:</p>
+
+    <ul>
+      <li><strong>Spurious invocation.</strong> A compromised workload calls another workload with no real user request behind it. Nothing distinguishes a genuine call from a synthesized one, because the downstream service has no signed evidence that any user ever asked for anything.</li>
+      <li><strong>Identity impersonation.</strong> A workload claims "user Alice wants this" by simply writing <code>X-User-Id: alice</code>. Downstream trusts it because what else can it do? The user-id header has no integrity.</li>
+      <li><strong>Parameter tampering.</strong> Alice's order to buy 100 shares of MSFT crosses six services on its way to the execution engine. Any one of them can rewrite the payload mid-flight. The execution service has no signed record of what Alice originally asked for; it only has what its immediate caller handed it.</li>
+      <li><strong>Token theft and replay.</strong> The user's access token, valid for an hour, sits in a hundred different in-memory buffers and log lines across the internal mesh. Steal it once and you can replay it against any resource server that accepts it, until it expires.</li>
+    </ul>
+
+    <p class="pullquote">
+      The interior is not friendly. It is merely <em>less hostile</em>, which is a different thing entirely, and the difference is precisely where every breach lives.
+      <cite>— On the perimeter fallacy</cite>
+    </p>
+
+    <p>The right framing is this: the access token is a credential for crossing <em>the edge</em>. Inside, we need a different artifact — one that binds, in a way the cryptography enforces, the user's identity to <em>this specific transaction</em> with <em>these specific parameters</em>, valid for <em>the brief window</em> required to fan out and return. The Transaction Token is that artifact.</p>
+
+    <h2><span class="num">§ 02</span>What a Txn-Token actually is</h2>
+
+    <p>Strip away the spec language and a Txn-Token is a short-lived signed token — typically a JWT, though the draft permits other structured formats like CWT — that is minted at the edge of a trust domain in exchange for, or in response to, whatever credential or context arrived from outside. (Token exchange is the common path I'll use throughout, but the draft also allows direct issuance, workload-initiated issuance, and internally-initiated transactions with no external token at all.) It carries three things that nothing else in your stack carries simultaneously:</p>
+
+    <ol>
+      <li>The <strong>user identity</strong> — who, on whose behalf, made this happen — bound into a subject claim (commonly <code>sub</code>) signed by an issuer that downstream services trust.</li>
+      <li>The <strong>workload identity</strong> — which workload requested this Txn-Token from the TTS — bound into the <code>req_wl</code> claim. The draft treats this as a first-class pillar, not a footnote: who minted matters as much as who initiated.</li>
+      <li>The <strong>transaction context</strong> — what action, on what object, under what intent — bound into the <code>tctx</code> claim (§10.2 of the draft), which downstream services treat as the canonical authorization input.</li>
+      <li>The <strong>requester context</strong> — IP, authentication method, device, anything that informs risk but doesn't drive authorization — bound into the <code>rctx</code> claim (also §10.2).</li>
+    </ol>
+
+    <p>Every downstream workload validates the signature, the audience, the expiry — and then reads its authorization inputs from the signed claims, not from the request body or the headers. The request body becomes, in a sense, advisory: the truth lives in the token.</p>
+
+    <div class="diagram-wrap">
+      <div class="diagram-caption">01 &middot; Anatomy of the call chain</div>
+
+      <svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="diag1-title">
+        <title id="diag1-title">The basic Txn-Token flow: edge exchange and inward propagation</title>
+
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#c97b5a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Trust domain envelope -->
+        <rect x="180" y="115" width="510" height="320" rx="6" fill="none" stroke="#1f1f28" stroke-width="1" stroke-dasharray="3 6"/>
+        <text x="195" y="135" font-family="DM Mono, monospace" font-size="9" letter-spacing="2" fill="#6e6a5e">TRUST DOMAIN &mdash; trust-domain.example</text>
+
+        <!-- External client -->
+        <g>
+          <rect x="20" y="200" width="130" height="64" rx="2" fill="#131318" stroke="#6e6a5e" stroke-width="0.6"/>
+          <text x="85" y="226" text-anchor="middle" font-family="Playfair Display, serif" font-style="italic" font-size="13" fill="#e8e3d6">External client</text>
+          <text x="85" y="244" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" letter-spacing="1" fill="#6e6a5e">access token</text>
+        </g>
+
+        <!-- API gateway -->
+        <g>
+          <rect x="210" y="200" width="130" height="64" rx="2" fill="#131318" stroke="#c97b5a" stroke-width="0.8"/>
+          <text x="275" y="226" text-anchor="middle" font-family="Playfair Display, serif" font-style="italic" font-size="13" fill="#e8e3d6">API gateway</text>
+          <text x="275" y="244" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" letter-spacing="1" fill="#c97b5a">external endpoint</text>
+        </g>
+
+        <!-- TTS -->
+        <g>
+          <rect x="520" y="160" width="150" height="80" rx="2" fill="#131318" stroke="#d4b878" stroke-width="0.8"/>
+          <text x="595" y="188" text-anchor="middle" font-family="Playfair Display, serif" font-style="italic" font-size="13" fill="#d4b878">Txn-Token Service</text>
+          <text x="595" y="208" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" letter-spacing="1" fill="#6e6a5e">mints &amp; signs</text>
+          <text x="595" y="224" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" letter-spacing="1" fill="#6e6a5e">RFC 8693 exchange</text>
+        </g>
+
+        <!-- Order svc -->
+        <g>
+          <rect x="210" y="335" width="130" height="60" rx="2" fill="#131318" stroke="#7a9583" stroke-width="0.6"/>
+          <text x="275" y="361" text-anchor="middle" font-family="Playfair Display, serif" font-style="italic" font-size="13" fill="#e8e3d6">Order service</text>
+          <text x="275" y="378" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" letter-spacing="1" fill="#6e6a5e">internal workload</text>
+        </g>
+
+        <!-- Execution svc -->
+        <g>
+          <rect x="400" y="335" width="130" height="60" rx="2" fill="#131318" stroke="#7a9583" stroke-width="0.6"/>
+          <text x="465" y="361" text-anchor="middle" font-family="Playfair Display, serif" font-style="italic" font-size="13" fill="#e8e3d6">Execution</text>
+          <text x="465" y="378" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" letter-spacing="1" fill="#6e6a5e">internal workload</text>
+        </g>
+
+        <!-- Ledger svc -->
+        <g>
+          <rect x="560" y="335" width="130" height="60" rx="2" fill="#131318" stroke="#7a9583" stroke-width="0.6"/>
+          <text x="625" y="361" text-anchor="middle" font-family="Playfair Display, serif" font-style="italic" font-size="13" fill="#e8e3d6">Ledger</text>
+          <text x="625" y="378" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" letter-spacing="1" fill="#6e6a5e">internal workload</text>
+        </g>
+
+        <!-- 1. client → gateway -->
+        <text x="180" y="190" font-family="DM Mono, monospace" font-size="9" letter-spacing="1" fill="#c97b5a">1. access token</text>
+        <line x1="150" y1="232" x2="208" y2="232" stroke="#c97b5a" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- 2/3. gateway ↔ TTS -->
+        <text x="430" y="194" font-family="DM Mono, monospace" font-size="9" letter-spacing="1" fill="#c97b5a">2. exchange</text>
+        <line x1="340" y1="216" x2="518" y2="200" stroke="#c97b5a" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <text x="430" y="250" font-family="DM Mono, monospace" font-size="9" letter-spacing="1" fill="#d4b878">3. Txn-Token</text>
+        <line x1="518" y1="240" x2="340" y2="252" stroke="#d4b878" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- 4. gateway → order -->
+        <text x="290" y="305" font-family="DM Mono, monospace" font-size="9" letter-spacing="1" fill="#d4b878">4. Txn-Token forwarded</text>
+        <line x1="275" y1="264" x2="275" y2="333" stroke="#d4b878" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- 5. order → execution → ledger (same token, unmodified) -->
+        <line x1="340" y1="365" x2="398" y2="365" stroke="#d4b878" stroke-width="1.2" marker-end="url(#arr)"/>
+        <line x1="530" y1="365" x2="558" y2="365" stroke="#d4b878" stroke-width="1.2" marker-end="url(#arr)"/>
+        <text x="465" y="420" text-anchor="middle" font-family="Playfair Display, serif" font-style="italic" font-size="11" fill="#d4b878">5. same token, unmodified</text>
+
+      </svg>
+
+      <p class="diagram-note">Within a single transaction, the Txn-Token flows forward unchanged. A new transaction — initiated, not just continued — gets a fresh mint.</p>
+    </div>
+
+    <h2><span class="num">§ 03</span>The stock trade, in mechanism</h2>
+
+    <p>Concrete is better than abstract. Let me walk through the trade end-to-end, with the actual wire format, because the wire format is where the design either earns its keep or quietly fails.</p>
+
+    <h3>Step one — the edge exchange</h3>
+
+    <p>The user submits the trade. The API gateway receives the request bearing the user's OAuth access token. Before it dispatches anything inward, it makes one call: an <strong>RFC 8693 token exchange</strong> to the Transaction Token Service, asking to swap the access token for a Txn-Token scoped to this specific trade.</p>
+
+    <pre data-lang="http"><span class="k">POST</span> /txn-token-service/token_endpoint <span class="k">HTTP</span>/1.1
+<span class="k">Host</span>: txn-token-service.trust-domain.example
+<span class="k">Content-Type</span>: application/x-www-form-urlencoded
+
+grant_type=urn:ietf:params:oauth:grant-type:token-exchange
+&amp;requested_token_type=urn:ietf:params:oauth:token-type:txn_token
+&amp;audience=trust-domain.example
+&amp;scope=trade.stocks
+&amp;subject_token=eyJhbGciOiJFUzI1NiIsImtpZC...   <span class="c">// the user's access token</span>
+&amp;subject_token_type=urn:ietf:params:oauth:token-type:access_token
+&amp;request_context={<span class="s">"req_ip"</span>:<span class="s">"69.151.72.123"</span>,<span class="s">"authn"</span>:<span class="s">"urn:ietf:rfc:6749"</span>}
+&amp;request_details={<span class="s">"action"</span>:<span class="s">"BUY"</span>,<span class="s">"ticker"</span>:<span class="s">"MSFT"</span>,<span class="s">"quantity"</span>:<span class="s">"100"</span>}
+    </pre>
+
+    <p>Three things to notice. First, the gateway uses RFC 8693 token exchange — this is the path I'll show throughout, though as flagged at the top, the draft permits other minting mechanisms. Second, I'm using an OAuth-style <code>scope</code> string (<code>trade.stocks</code>) for familiarity. The draft does not actually define OAuth-style scopes as a normative part of the Txn-Token; it leaves the authorization-intent encoding to the profile. You could equally express this as a transaction-claim field with no <code>scope</code> string at all. Third, the gateway passes the desired transaction parameters in <code>request_details</code> — but it cannot dictate what ends up in the resulting token. That decision belongs to the TTS.</p>
+
+    <h3>Step two — the mint</h3>
+
+    <p>The TTS validates the access token, looks up the user, evaluates whatever policy is appropriate (does this user have trading entitlements? is the account in good standing? is the customer geo-permitted for this instrument?) — and then <strong>the TTS itself</strong> mints and signs the Txn-Token. No other entity in the architecture is permitted to sign one. The TTS publishes its JWKS at a well-known endpoint; every downstream workload verifies the JWS signature against that key. Here is the body the TTS produced and signed:</p>
+
+    <pre data-lang="json">{
+  <span class="n">"iat"</span><span class="p">:</span> <span class="n">1686536226</span>,
+  <span class="n">"aud"</span><span class="p">:</span> <span class="s">"trust-domain.example"</span>,
+  <span class="n">"exp"</span><span class="p">:</span> <span class="n">1686536586</span>,           <span class="c">// 6 minutes</span>
+  <span class="n">"txn"</span><span class="p">:</span> <span class="s">"97053963-771d-49cc-a4e3-20aad399c312"</span>,
+  <span class="n">"sub"</span><span class="p">:</span> <span class="s">"d084sdrt234fsaw34tr23t"</span>,
+  <span class="n">"req_wl"</span><span class="p">:</span> <span class="s">"apigateway.trust-domain.example"</span>,
+  <span class="n">"scope"</span><span class="p">:</span> <span class="s">"trade.stocks"</span>,
+  <span class="n">"rctx"</span><span class="p">:</span> {
+    <span class="n">"req_ip"</span><span class="p">:</span> <span class="s">"69.151.72.123"</span>,
+    <span class="n">"authn"</span><span class="p">:</span> <span class="s">"urn:ietf:rfc:6749"</span>
+  },
+  <span class="n">"tctx"</span><span class="p">:</span> {
+    <span class="n">"action"</span><span class="p">:</span> <span class="s">"BUY"</span>,
+    <span class="n">"ticker"</span><span class="p">:</span> <span class="s">"MSFT"</span>,
+    <span class="n">"quantity"</span><span class="p">:</span> <span class="s">"100"</span>,
+    <span class="n">"customer_type"</span><span class="p">:</span> { <span class="n">"geo"</span><span class="p">:</span> <span class="s">"US"</span>, <span class="n">"level"</span><span class="p">:</span> <span class="s">"VIP"</span> }
+  }
+}</pre>
+
+    <p>What goes back on the wire to the gateway is the standard token-exchange response with the signed JWT in the <code>access_token</code> field:</p>
+
+    <pre data-lang="http"><span class="k">HTTP</span>/1.1 200 OK
+<span class="k">Content-Type</span>: application/json
+<span class="k">Cache-Control</span>: no-store
+
+{
+  <span class="n">"token_type"</span><span class="p">:</span> <span class="s">"N_A"</span>,
+  <span class="n">"issued_token_type"</span><span class="p">:</span> <span class="s">"urn:ietf:params:oauth:token-type:txn_token"</span>,
+  <span class="n">"access_token"</span><span class="p">:</span> <span class="s">"eyJ0eXAiOiJ0eG50b2tlbitqd3QiLCJhbGciOiJSUzI1NiIsImtpZCI6InR0cy0yMDI2LXEyIn0..."</span>
+}</pre>
+
+    <p>The header is <code>{"typ":"txntoken+jwt","alg":"RS256","kid":"tts-2026-q2"}</code> — the <code>kid</code> identifies which of the TTS's signing keys was used, so downstream services can pick the right public key from the JWKS during rotation. <strong>The TTS signs the JWS</strong> with the corresponding private key, base64url-encodes the result, and returns it inside the <code>access_token</code> field of the RFC 8693 token-exchange response (the field is named <code>access_token</code> for protocol-compatibility reasons; the <code>issued_token_type</code> on the response is <code>urn:ietf:params:oauth:token-type:txn_token</code>, which is how the gateway knows it received a Txn-Token).</p>
+
+    <p>Notice that <code>customer_type</code> was not in the gateway's request — the TTS computed it from policy. This is the discipline at the core of the design: <em>the requester suggests, the TTS decides</em>. If a compromised gateway could stuff arbitrary fields into <code>tctx</code>, the signature would be theatrical. So <code>tctx</code> is the TTS's signed verdict, not the requester's wish-list.</p>
+
+    <h3>Step three — propagation</h3>
+
+    <p>The gateway now calls the order service. The Txn-Token rides in a dedicated header — <em>not</em> the Authorization header, which is reserved in this architecture for service-to-service authentication (mTLS, SPIFFE SVIDs, what have you):</p>
+
+    <pre data-lang="http"><span class="k">POST</span> /orders <span class="k">HTTP</span>/1.1
+<span class="k">Host</span>: order-service.trust-domain.example
+<span class="k">Txn-Token</span>: eyJ0eXAiOiJ0eG50b2tlbitqd3QiLC...
+<span class="k">Content-Type</span>: application/json
+
+{<span class="s">"action"</span>: <span class="s">"BUY"</span>, <span class="s">"ticker"</span>: <span class="s">"MSFT"</span>, <span class="s">"quantity"</span>: <span class="n">100</span>}</pre>
+
+    <p>The order service validates the JWS signature against the TTS's published key. It verifies <code>aud</code> matches its trust domain. It verifies <code>exp</code> is in the future. And then — this is the part most teams underweight when they first read the spec — <strong>it reads the trade parameters from <code>tctx</code>, not from the request body</strong>. The request body is convenient; the token is canonical. If a compromised midstream service rewrites the body to buy ten thousand shares, the order service still reads "100" from <code>tctx.quantity</code> and the attack fails silently.</p>
+
+    <p>When the order service calls execution as part of the same logical transaction, it forwards the same Txn-Token, unmodified. When execution calls the ledger to record the same trade, same thing. The token is the spine of one transaction; every workload independently verifies it; nobody mutates it. If, however, a workload decides to initiate a <em>new</em> transaction inside the trust domain — say the order service spawns an asynchronous fraud-review workflow — that new transaction warrants its own Txn-Token, minted by the TTS, scoped to its own context. The spec is careful here: the rule is "don't mutate a Txn-Token mid-call-chain," not "one token per request that ever enters the trust domain."</p>
+
+    <h2><span class="num">§ 04</span>How the four failures die</h2>
+
+    <p>Walk back to the four threats. Each one dies for a specific, attributable reason:</p>
+
+    <div class="threat-grid">
+
+      <div class="threat-row">
+        <div class="threat-name">Spurious invocation</div>
+        <div class="threat-kill">No valid Txn-Token means no valid transaction. A compromised workload that wants to fabricate a call has no way to forge a token that downstream services will accept — the TTS is the only signer, and the TTS demands evidence of a real originating request.</div>
+      </div>
+
+      <div class="threat-row">
+        <div class="threat-name">User impersonation</div>
+        <div class="threat-kill">The <code>sub</code> claim is signed by the TTS, which derived it from a validated subject token, which was tied to a real authentication event. A midstream service cannot rewrite <code>sub</code> without breaking the signature, and it cannot resign the token without the TTS's key.</div>
+      </div>
+
+      <div class="threat-row">
+        <div class="threat-name">Parameter tampering</div>
+        <div class="threat-kill">The transaction parameters live in <code>tctx</code>, signed. Workloads read authorization inputs from the token, not from the request body. A compromised hop can rewrite the body all it wants — the execution service is reading from a different source of truth.</div>
+      </div>
+
+      <div class="threat-row">
+        <div class="threat-name">Token theft &amp; replay</div>
+        <div class="threat-kill">The access token never enters the Txn-Token. The Txn-Token itself is audience-bound to one trust domain, scoped narrowly, lives for minutes, and carries a unique <code>txn</code> identifier that workloads can cache to enforce single-use. Steal it and you get one trivial action in a six-minute window.</div>
+      </div>
+
+    </div>
+
+    <p class="pullquote">
+      The token does not authorize a session. It authorizes a <em>transaction</em>. The shift in granularity is the entire architectural point.
+      <cite>— On token semantics</cite>
+    </p>
+
+    <h2><span class="num">§ 05</span>Healthcare, where the design earns its keep</h2>
+
+    <p>The stock trade is the textbook example. The example I find more revealing — the one that shows you what <code>tctx</code> can really do in the hands of a thoughtful TTS — is healthcare.</p>
+
+    <p>Consider Dr. Sarah Chen, an attending physician at a teaching hospital. She logs into the clinical workstation in the ICU, authenticates with WebAuthn plus TOTP, opens the patient on her 2pm appointment, and clicks "show recent labs." That single click fans out, in any modern EHR architecture, to a dozen internal services: patient demographics, the laboratory information system, radiology PACS, pharmacy, an audit logger that exists because HIPAA requires it to exist.</p>
+
+    <p>Now imagine the TTS mints and signs this Txn-Token (header <code>{"typ":"txntoken+jwt","alg":"RS256","kid":"hospital-tts-2026-q2"}</code>):</p>
+
+    <pre data-lang="json">{
+  <span class="n">"iat"</span><span class="p">:</span> <span class="n">1747263600</span>,
+  <span class="n">"aud"</span><span class="p">:</span> <span class="s">"hospital.example"</span>,
+  <span class="n">"exp"</span><span class="p">:</span> <span class="n">1747263780</span>,           <span class="c">// 3 minutes</span>
+  <span class="n">"txn"</span><span class="p">:</span> <span class="s">"rx-2026-05-14-a8f3e9c4-7d21-4b8a-9e5f-c3d8a1b2e4f7"</span>,
+  <span class="n">"sub"</span><span class="p">:</span> <span class="s">"user:schen@hospital.example"</span>,
+  <span class="n">"scope"</span><span class="p">:</span> <span class="s">"patient.records.read"</span>,
+  <span class="n">"rctx"</span><span class="p">:</span> {
+    <span class="n">"req_ip"</span><span class="p">:</span> <span class="s">"10.42.7.18"</span>,
+    <span class="n">"authn"</span><span class="p">:</span> <span class="s">"webauthn+totp"</span>,
+    <span class="n">"device_id"</span><span class="p">:</span> <span class="s">"WS-ICU-04"</span>
+  },
+  <span class="n">"tctx"</span><span class="p">:</span> {
+    <span class="n">"patient_id"</span><span class="p">:</span> <span class="s">"MRN-8821334"</span>,
+    <span class="n">"purpose_of_use"</span><span class="p">:</span> <span class="s">"treatment"</span>,
+    <span class="n">"encounter_id"</span><span class="p">:</span> <span class="s">"ENC-2026-05-14-2241"</span>,
+    <span class="n">"requester_role"</span><span class="p">:</span> <span class="s">"attending_physician"</span>,
+    <span class="n">"relationship"</span><span class="p">:</span> <span class="s">"treating"</span>,
+    <span class="n">"data_classes_permitted"</span><span class="p">:</span> [<span class="s">"demographics"</span>, <span class="s">"labs"</span>, <span class="s">"imaging_reports"</span>]
+  }
+}</pre>
+
+    <p>Look closely at <code>data_classes_permitted</code>. Dr. Chen did not ask for "demographics, labs, imaging reports." She clicked "show recent labs." The TTS — knowing her role, her relationship to this patient, her authentication strength, the encounter context — produced an <em>explicit allowlist</em> of data classes she is permitted to read for this specific encounter. Mental health notes are not in the list. Genetic counseling records are not in the list. If the lab service is compromised and tries to query the mental health system using this token, the mental health system reads <code>tctx.data_classes_permitted</code>, fails to find its data class, and refuses — regardless of who is asking.</p>
+
+    <div class="callout">
+      <div class="callout-label">The architectural inversion</div>
+      <p>Notice what just happened. The authorization decision was made <em>once</em>, at the edge, by the TTS — which has access to the full policy engine, the role hierarchy, the relationship graph, the consent registry. Every downstream service now <em>enforces</em> that decision uniformly, by reading a signed field. We have inverted the usual pattern, where every microservice has to re-derive the authorization decision from raw inputs and inevitably gets it slightly wrong in slightly different ways.</p>
+    </div>
+
+    <h3>Break-glass, observably</h3>
+
+    <p>The pattern composes elegantly with edge cases. Consider the ER physician who needs to read records for an unconscious patient with whom she has no prior treatment relationship. The traditional answer is "break-glass" — emergency override — which in most EHRs amounts to an unaudited or weakly-audited bypass that gets used and abused with alarming frequency.</p>
+
+    <p>With Txn-Tokens, break-glass is a first-class TTS request: <code>request_details.purpose_of_use=emergency</code>. The TTS issues a token with <code>tctx.purpose_of_use=emergency</code> and <code>tctx.break_glass=true</code>. Every downstream service still authorizes the access, but now also logs it at a higher audit tier, triggers a real-time alert to the compliance team, and records the entire fan-out — every service touched — under one <code>txn</code> identifier. Forensics goes from "find every log line that mentions MRN-8821334 around 2pm Tuesday across forty services" to "show me the call chain for txn <code>rx-2026-05-14-a8f3e9c4-...</code>."</p>
+
+    <p>That second query is deterministic. The first is best-effort archaeology. The difference matters enormously the day the regulator calls.</p>
+
+    <h2><span class="num">§ 06</span>The two claims, and the discipline they require</h2>
+
+    <p>The spec is deliberately thin on what goes inside <code>tctx</code> and <code>rctx</code>. Section 10.2.2 suggests two fields for <code>rctx</code> (<code>req_ip</code>, <code>authn</code>) and explicitly says you can include "any values the TTS determines are relevant." Section 10.2.3 defines zero required fields for <code>tctx</code> and says its content is "determined by the TTS." This is a framing contract, not a schema.</p>
+
+    <p>The freedom is real, but it requires discipline. Three rules I have arrived at, after a lot of whiteboard time:</p>
+
+    <h4>Rule one — authorization gates go in tctx</h4>
+    <p>If a downstream service makes an authorization decision based on a field, it belongs in <code>tctx</code>. The <code>data_classes_permitted</code> allowlist, the patient ID, the trade ticker, the customer tier when tiering affects what's permitted — all <code>tctx</code>. The IP address, the authentication method, the user agent, the device — all <code>rctx</code>, because they inform risk telemetry but should not drive yes/no decisions deep in the call chain.</p>
+
+    <h4>Rule two — the TTS decides, the requester suggests</h4>
+    <p>Never let a field in <code>tctx</code> be a verbatim copy of something the requester asked for, with no validation. The whole point of the signature is that <code>tctx</code> represents the TTS's policy verdict. If a compromised gateway can set <code>tctx.bypass_audit=true</code> just by including it in <code>request_details</code>, your design is broken. The TTS must own the schema and the validation.</p>
+
+    <h4>Rule three — tctx is not a session</h4>
+    <p>The temptation, once you have a signed envelope, is to stuff everything into it. The user's full role list, every permission flag, the entire customer record. Resist this. A token with forty-seven fields is a juicy target and a coupling nightmare; it drifts back toward the "session token" model that Section 14.11 of the spec explicitly disclaims. The Txn-Token is a per-transaction policy decision, frozen at the edge, narrow enough that one stolen token equals one trivial action. The narrower the better.</p>
+
+    <p class="pullquote">
+      The narrower you can make the token, the less it matters when one of them leaks. Design for the leak, not for the happy path.
+      <cite>— On blast radius</cite>
+    </p>
+
+    <h2><span class="num">§ 07</span>Where this fits with everything else</h2>
+
+    <p>Txn-Tokens do not replace your existing identity primitives. They sit alongside them, and the layering matters.</p>
+
+    <p>Workloads still need to authenticate to each other — that is what mTLS and SPIFFE SVIDs are for. A SPIFFE ID answers "is this caller really the order service?" It tells you nothing about whether the call should be permitted. The Txn-Token answers "given that this is the order service, is this specific call part of a transaction that the user actually authorized?" One is workload identity; the other is transaction context. You need both. Section 14.11 of the spec is explicit on this: <em>Transaction Tokens are not authentication credentials</em>. Treating them as such is the most common architectural mistake I expect to see during early adoption.</p>
+
+    <p>Access tokens still exist, and still handle the edge. The Txn-Token is what the access token becomes <em>after</em> it has authenticated the user at the boundary and the system has decided to admit the request. Think of the access token as the visa, the Txn-Token as the boarding pass for one specific flight.</p>
+
+    <p>And the broader trust-domain architecture from the WIMSE working group is the context this all lives in: workloads with SPIFFE identities, communicating over mTLS or WIMSE Workload Proof Tokens, inside an explicitly bounded trust domain — and within that domain, transactions are carried by Txn-Tokens. Each layer answers a different question, and the design is strongest when the layers stay in their lanes.</p>
+
+    <h2><span class="num">§ 08</span>What I think will actually happen</h2>
+
+    <p>The honest assessment: this is a draft, it is on the standards track, and it will probably ship as an RFC sometime in the next twelve to eighteen months. The early adopters will be the people who already feel the pain — financial services, healthcare, anyone with regulatory audit requirements that make "best-effort log correlation" an inadequate answer when the regulator calls.</p>
+
+    <p>The hard parts of adoption will not be the protocol. RFC 8693 token exchange already has implementations; the Txn-Token profile is a small delta. The hard parts will be:</p>
+
+    <ul>
+      <li><strong>Building a TTS that behaves as one logical service.</strong> The spec talks about a single logical TTS per trust domain — note "logical." That can be one centralized deployment, a horizontally-scaled cluster sharing keys, or even a distributed set of issuers federated under a common trust root. The hard problem isn't where the bits run; it's that most organizations have N policy decision points scattered across N teams, and consolidating those into a coherent issuance contract is an organizational problem, not a deployment-topology problem.</li>
+      <li><strong>Designing the <code>tctx</code> schema.</strong> Every team will want their own fields. Discipline around what is actually an authorization input — versus what is just metadata that <em>could</em> be useful — will determine whether the token stays narrow or bloats into a session.</li>
+      <li><strong>Teaching workloads to read from <code>tctx</code>, not from the request body.</strong> This is a code-review culture change. The request body is right there. The token is one parse-and-validate away. The temptation to just use the body will be real and constant.</li>
+    </ul>
+
+    <p>None of these are blocking. All of them are work.</p>
+
+    <div class="ornament">· · ·</div>
+
+  </article>
+
+</div>
+
+</body>
+</html>
