@@ -321,17 +321,17 @@
     <p class="dropcap">A prompt injection attack aims to inject malicious instruction/data into the input of an LLM-Integrated Application such that it produces results as an attacker desires.</p>
 
     <h2 class="section"><span class="section-num">CONTRIBUTIONS</span>Contributions of the paper</h2>
-    <p>In summary, we make the following contributions:</p>
+    <p>In summary, this paper make the following contributions:</p>
     <ul class="clean">
-      <li>We propose a framework to formalize prompt injection attacks. Moreover, based on our framework, we design a new attack by combining existing ones.</li>
-      <li>We perform systematic evaluation on prompt injection attacks using our framework, which provides a basic benchmark for evaluating future defenses against prompt injection attacks.</li>
-      <li>We systematically evaluate 10 candidate defenses, and open source our platform to facilitate research on new prompt injection attacks and defenses.</li>
+      <li>Propose a framework to formalize prompt injection attacks. Moreover, based on our framework, authors design a new attack by combining existing ones.</li>
+      <li>Perform systematic evaluation on prompt injection attacks using our framework, which provides a basic benchmark for evaluating future defenses against prompt injection attacks.</li>
+      <li>Systematically evaluate 10 candidate defenses, and open source our platform to facilitate research on new prompt injection attacks and defenses.</li>
     </ul>
 
     <h2 class="section"><span class="section-num">DEFINITIONS</span>Definitions</h2>
 
     <h3 class="sub">LLMs</h3>
-    <p>An LLM is a neural network that takes a text (called prompt) as input and outputs a text (called response). For simplicity, we use <code>f</code> to denote an LLM, <code>p</code> to denote a prompt, and <code>f(p)</code> to denote the response produced by the LLM <code>f</code> for the prompt <code>p</code>.</p>
+    <p>An LLM is a neural network that takes a text (called prompt) as input and outputs a text (called response). For simplicity, author use <code>f</code> to denote an LLM, <code>p</code> to denote a prompt, and <code>f(p)</code> to denote the response produced by the LLM <code>f</code> for the prompt <code>p</code>.</p>
 
     <h3 class="sub">LLM-Integrated Applications</h3>
     <p>Figure 1 illustrates LLM-Integrated Applications. There are four components: user, LLM-Integrated Application, LLM, and external resource. The user uses an LLM-Integrated Application to accomplish a task such as automated screening, spam detection, question answering, text summarization, and translation. The LLM-Integrated Application queries the LLM with a prompt <code>p</code> to solve the task for the user and returns the (post-processed) response produced by the LLM to the user. In an LLM-Integrated Application, the prompt <code>p</code> is the concatenation of an instruction prompt and data.</p>
@@ -473,31 +473,31 @@
     <h2 class="section"><span class="section-num">DEFINITION</span>Definition of Prompt Injection Attack</h2>
 
     <h4 class="subsub">Target task</h4>
-    <p>A task consists of an instruction and data. A user aims to solve a task, which we call target task. For simplicity, we use <code>t</code> to denote the target task, <code>sₜ</code> to denote its instruction (called target instruction), and <code>xₜ</code> to denote its data (called target data).</p>
+    <p>A task consists of an instruction and data. A user aims to solve a task, which author call target task. For simplicity, author use <code>t</code> to denote the target task, <code>sₜ</code> to denote its instruction (called target instruction), and <code>xₜ</code> to denote its data (called target data).</p>
 
     <h4 class="subsub">Injected task</h4>
-    <p>Instead of accomplishing the target task, a prompt injection attack misleads the LLM-Integrated Application to accomplish another task chosen by the attacker. We call the attacker-chosen task injected task. We use <code>e</code> to denote the injected task, <code>sₑ</code> to denote its instruction (called injected instruction), and <code>xₑ</code> to denote its data (called injected data).</p>
+    <p>Instead of accomplishing the target task, a prompt injection attack misleads the LLM-Integrated Application to accomplish another task chosen by the attacker. author call the attacker-chosen task injected task. author use <code>e</code> to denote the injected task, <code>sₑ</code> to denote its instruction (called injected instruction), and <code>xₑ</code> to denote its data (called injected data).</p>
 
     <p>Formally, given an LLM-Integrated Application with an instruction prompt <code>sₜ</code> (i.e., target instruction) and data <code>xₜ</code> (i.e., target data) for a target task <code>t</code>. A prompt injection attack modifies the data <code>xₜ</code> such that the LLM-Integrated Application accomplishes an injected task instead of the target task.</p>
 
-    <p>We have the following remarks about our definition:</p>
+    <p>Author have the following remarks about our definition:</p>
     <ul class="clean">
-      <li>Our formal definition is general as an attacker can select an arbitrary injected task.</li>
-      <li>Our formal definition enables us to design prompt injection attacks. In fact, we introduce a general framework to implement such prompt injection attacks in Section 4.2.</li>
-      <li>Our formal definition enables us to systematically quantify the success of a prompt injection attack by verifying whether the LLM-Integrated Application accomplishes the injected task instead of the target task. In fact, in Section 6, we systematically evaluate and quantify the success of different prompt injection attacks for different target/injected tasks and LLMs.</li>
+      <li>Author's formal definition is general as an attacker can select an arbitrary injected task.</li>
+      <li>Author's formal definition enables us to design prompt injection attacks. In fact, this paper introduce a general framework to implement such prompt injection attacks in Section 4.2.</li>
+      <li>Author's formal definition enables us to systematically quantify the success of a prompt injection attack by verifying whether the LLM-Integrated Application accomplishes the injected task instead of the target task. In fact, in Section 6, author systematically evaluate and quantify the success of different prompt injection attacks for different target/injected tasks and LLMs.</li>
     </ul>
 
     <h2 class="section"><span class="section-num">FRAMEWORK</span>Attack Framework</h2>
 
     <h3 class="sub">General attack framework</h3>
-    <p>Based on the definition of prompt injection attack in Definition 1, an attacker introduces malicious content into the data <code>xₜ</code> such that the LLM-Integrated Application accomplishes an injected task. We call the data with malicious content compromised data and denote it as <code>x̃</code>. Different prompt injection attacks essentially use different strategies to craft the compromised data <code>x̃</code> based on the target data <code>xₜ</code> of the target task, injected instruction <code>sₑ</code> of the injected task, and injected data <code>xₑ</code> of the injected task. For simplicity, we use <code>A</code> to denote a prompt injection attack. Formally, we have the following framework to craft <code>x̃</code>:</p>
+    <p>Based on the definition of prompt injection attack in Definition 1, an attacker introduces malicious content into the data <code>xₜ</code> such that the LLM-Integrated Application accomplishes an injected task. Author call the data with malicious content compromised data and denote it as <code>x̃</code>. Different prompt injection attacks essentially use different strategies to craft the compromised data <code>x̃</code> based on the target data <code>xₜ</code> of the target task, injected instruction <code>sₑ</code> of the injected task, and injected data <code>xₑ</code> of the injected task. For simplicity, author use <code>A</code> to denote a prompt injection attack. Formally, author have the following framework to craft <code>x̃</code>:</p>
 
     <span class="formula">x̃ = A(xₜ, sₑ, xₑ)</span>
 
     <p>Without prompt injection attack, the LLM-Integrated Application uses the prompt <code>p = sₜ ⊕ xₜ</code> to query the backend LLM <code>f</code>, which returns a response <code>f(p)</code> for the target task.</p>
 
     <h3 class="sub">Naive Attack</h3>
-    <p>A straightforward attack is that we simply concatenate the target data <code>xₜ</code>, injected instruction <code>sₑ</code>, and injected data <code>xₑ</code>. In particular, we have:</p>
+    <p>A straightforward attack is that author simply concatenate the target data <code>xₜ</code>, injected instruction <code>sₑ</code>, and injected data <code>xₑ</code>. In particular, we have:</p>
     <span class="formula">x̃ = xₜ ⊕ sₑ ⊕ xₑ</span>
     <p>where ⊕ represents concatenation of strings, e.g., “a” ⊕ “b” = “ab”.</p>
 
