@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Consent in AI is Early-Days Permission in Android and iOS — Omar Faroque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --bg-surface: #131316;
+    --bg-elevated: #1a1a1f;
+    --text-primary: #e8e6e0;
+    --text-secondary: #9a9690;
+    --text-muted: #5a5856;
+    --accent: #c8a96e;
+    --accent-dim: #7a6440;
+    --accent-glow: rgba(200, 169, 110, 0.08);
+    --red: #c94f4f;
+    --teal: #4a9e8a;
+    --border: rgba(255,255,255,0.06);
+    --border-accent: rgba(200, 169, 110, 0.25);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { font-size: 18px; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.75;
+    min-height: 100vh;
+  }
+
+  /* ── NOISE TEXTURE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 4rem 0 3rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .series-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .series-tag::before {
+    content: '';
+    display: inline-block;
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .subtitle {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    max-width: 580px;
+  }
+
+  .byline {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .byline-author {
+    color: var(--text-secondary);
+    font-weight: 400;
+  }
+
+  .byline-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--text-muted);
+  }
+
+  /* ── ARTICLE ── */
+  article {
+    padding-top: 3.5rem;
+  }
+
+  /* Drop cap */
+  article > p:first-of-type::first-letter {
+    font-family: 'Playfair Display', serif;
+    font-size: 4.5rem;
+    font-weight: 900;
+    line-height: 0.8;
+    float: left;
+    margin: 0.1rem 0.15rem 0 0;
+    color: var(--accent);
+  }
+
+  p {
+    margin-bottom: 1.6rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 300;
+  }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 3.5rem 0 1.2rem;
+    line-height: 1.3;
+  }
+
+  h3 {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 2.5rem 0 0.8rem;
+  }
+
+  /* ── PULL QUOTE ── */
+  .pull-quote {
+    margin: 3rem -1.5rem;
+    padding: 2rem 2.5rem;
+    border-left: 3px solid var(--accent);
+    background: var(--accent-glow);
+    position: relative;
+  }
+
+  .pull-quote::before {
+    content: '\201C';
+    font-family: 'Playfair Display', serif;
+    font-size: 5rem;
+    line-height: 0;
+    color: var(--accent-dim);
+    position: absolute;
+    top: 2rem;
+    left: 1.5rem;
+    pointer-events: none;
+  }
+
+  .pull-quote p {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    line-height: 1.65;
+    color: var(--text-primary);
+    margin-bottom: 0;
+    padding-left: 1.5rem;
+  }
+
+  /* ── STAT BLOCKS ── */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    margin: 2.5rem 0;
+    border: 1px solid var(--border);
+  }
+
+  .stat-block {
+    background: var(--bg-surface);
+    padding: 1.5rem 1.25rem;
+    text-align: center;
+  }
+
+  .stat-block .stat-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-block .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* ── CALLOUT BOX ── */
+  .callout {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-accent);
+    padding: 1.75rem 2rem;
+    margin: 2.5rem 0;
+  }
+
+  .callout-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.85rem;
+  }
+
+  .callout p {
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    margin-bottom: 0;
+    line-height: 1.7;
+  }
+
+  /* ── RECOMMENDATION LIST ── */
+  .rec-list {
+    list-style: none;
+    margin: 1.5rem 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .rec-list li {
+    background: var(--bg-surface);
+    padding: 1.25rem 1.5rem 1.25rem 1rem;
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .rec-list li .rec-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    padding-top: 0.15rem;
+    text-align: right;
+  }
+
+  .rec-list li .rec-text {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.65;
+  }
+
+  .rec-list li .rec-text strong {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    margin-bottom: 0.3rem;
+    letter-spacing: 0.01em;
+  }
+
+  /* ── CODE / MONOSPACE INLINE ── */
+  code {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    background: var(--bg-elevated);
+    color: var(--accent);
+    padding: 0.15em 0.45em;
+    border: 1px solid var(--border);
+  }
+
+  /* ── PROTOCOL STRIP ── */
+  .protocol-strip {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  .protocol-strip .proto {
+    flex: 1;
+    background: var(--bg-surface);
+    padding: 1.25rem 1rem;
+    text-align: center;
+  }
+
+  .protocol-strip .proto-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+
+  .protocol-strip .proto-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* ── DIVIDER ── */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 3.5rem 0;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+  }
+
+  .section-divider::before,
+  .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-top: 5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  footer .footer-name {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+  }
+
+  footer .footer-links {
+    display: flex;
+    gap: 1.5rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+  }
+
+  footer .footer-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  footer .footer-links a:hover {
+    color: var(--accent);
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-color: var(--accent-dim);
+    text-underline-offset: 3px;
+  }
+
+  a:hover {
+    text-decoration-color: var(--accent);
+  }
+
+  @media (max-width: 600px) {
+    html { font-size: 16px; }
+    .wrapper { padding: 0 1.25rem 4rem; }
+    .stat-row { grid-template-columns: 1fr; }
+    .protocol-strip { flex-direction: column; }
+    .pull-quote { margin: 2.5rem 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="series-tag">AI Agent Security — Consent Models</div>
+    <h1>Consent in AI is <em>Early-Days</em> Permission in Android and iOS</h1>
+    <p class="subtitle">How a decade-old UX failure from the mobile permission era is about to repeat itself — at a significantly larger scale, with significantly higher stakes.</p>
+    <div class="byline">
+      <span class="byline-author">Omar Faroque</span>
+    </div>
+  </header>
+
+  <article>
+
+    <p>Agentic AI systems are rapidly expanding their operational surface: booking travel, acquiring event tickets, executing code on behalf of developers, retrieving and summarizing documents from local and remote sources. Each of these capabilities requires delegated access to sensitive resources — file systems, payment instruments, billing identities, and personal data. That delegation, however, opens a well-understood threat surface: an adversary who can inject malicious instructions into the model's context — whether through prompt injection, poisoned retrieval, or compromised tool outputs — can potentially weaponize that delegation against the very user who granted it.</p>
+
+    <p>The canonical mitigation is user consent: require explicit authorization before any consequential action is taken. The model is sound in principle, and the security community has largely converged on it as a necessary control. But necessary is not sufficient. The harder question — one that the security and HCI communities have not yet fully resolved — is whether users actually understand what they are consenting to, and whether they can meaningfully reason about downstream consequences at the moment authorization is requested.</p>
+
+    <div class="pull-quote">
+      <p>Consent mechanisms that are technically present but cognitively inaccessible are not consent mechanisms at all — they are liability artifacts.</p>
+    </div>
+
+    <p>This is not a novel failure mode. It is structurally identical to the permission model breakdowns observed in the early Android and iOS ecosystems, where broad, decontextualized permission prompts produced consent that was technically informed but practically meaningless.</p>
+
+    <div class="section-divider">§</div>
+
+    <h2>The Empirical Record</h2>
+
+    <p>Felt et al. examined precisely this question in their paper <a href="https://www.usenix.org/legacy/event/soups12/tech/full_papers/Felt.pdf" target="_blank">Android Permissions: User Attention, Comprehension, and Behavior</a> — how users perceive, interpret, and act on consent requests in app-mediated systems. Their findings are damning, and they map with uncomfortable precision onto the current state of agentic AI authorization.</p>
+
+    <div class="stat-row">
+      <div class="stat-block">
+        <span class="stat-number">17%</span>
+        <span class="stat-label">paid attention to permissions during installation</span>
+      </div>
+      <div class="stat-block">
+        <span class="stat-number">42%</span>
+        <span class="stat-label">of lab participants unaware permission warnings existed</span>
+      </div>
+      <div class="stat-block">
+        <span class="stat-number">3%</span>
+        <span class="stat-label">correctly answered all three comprehension questions</span>
+      </div>
+    </div>
+
+    <p>Some participants who previously paid attention to permissions had stopped doing so over time. The mechanism is familiar: users encounter permission warnings for roughly 90% of applications. The signal-to-noise ratio collapses. This is where consent fatigue enters the picture — and where we need to be precise about what is being shown to the user, remember prior approvals, and reuse that context to avoid flooding users with redundant authorization dialogs.</p>
+
+    <div class="callout">
+      <div class="callout-label">Key Implication</div>
+      <p>In agentic AI systems — where a single upfront consent gesture may silently authorize cascading chains of autonomous actions across tools, APIs, and data stores — the fiction of informed consent carries consequences far weightier than a misconfigured mobile application.</p>
+    </div>
+
+    <p>The minority-expertise hypothesis offered by Felt et al., wherein a small fraction of comprehending users might protect the broader population through negative reviews, is similarly insufficient in the agentic context. The latency between an agent's unauthorized action and its public discovery may be measured in months, by which point the harm is irreversible and the consent record is immutable.</p>
+
+    <div class="section-divider">§</div>
+
+    <h2>The C-HIP Model and What It Demands</h2>
+
+    <p>Wogalter's Communication-Human Information Processing model formalizes the steps between a user being shown a warning message and deciding whether to act on it. Researchers in usable security have used C-HIP to analyze the specific ways computer security dialogs fail users. The findings consistently point in the same direction:</p>
+
+    <p>Egelman et al. applied C-HIP to anti-phishing warnings in two popular web browsers, recommending differentiation of severe warnings from less severe ones, user-facing recommendations, and elimination of jargon. Sunshine et al. followed up on certificate warnings, concluding that designs should be calibrated to the severity of the threat model and that context must inform the framing of suggestions to the user.</p>
+
+    <p>These findings are directly applicable to the consent surface of agentic AI. The AI consent literature has not yet fully reckoned with this body of work — but it should.</p>
+
+    <div class="section-divider">§</div>
+
+    <h2>Recommendations for Agentic Consent</h2>
+
+    <h3>Derived from Felt et al. and applied to AI systems</h3>
+
+    <ul class="rec-list">
+      <li>
+        <span class="rec-num">01</span>
+        <div class="rec-text">
+          <strong>Meaningful Consent Grouping</strong>
+          Category headings in mobile permission dialogs misled users because they were simultaneously too abstract and too opaque. For agentic consent, permissions should be grouped semantically by consequence — not by technical resource class. And critically: groupings should adapt to observed user behavior over time.
+        </div>
+      </li>
+      <li>
+        <span class="rec-num">02</span>
+        <div class="rec-text">
+          <strong>Risk-Framed Authorization Language</strong>
+          Warnings should focus on potential negative outcomes rather than resource names. "Full Internet access" tells users nothing useful. "May transmit your calendar data to external services" tells users something they can act on. Developers should be given structured space in the UI to justify why access is needed, balancing risk framing with benefit framing.
+        </div>
+      </li>
+      <li>
+        <span class="rec-num">03</span>
+        <div class="rec-text">
+          <strong>Auto-Approve Low-Risk Actions with Transparent Notification</strong>
+          Permissions without clear risks should not generate interruption-level warnings. Auto-approval of clearly low-risk consent preserves cognitive bandwidth for high-stakes decisions. The critical constraint: auto-approval must be visible, not silent. A non-blocking notification — <em>"We have automatically approved this low-risk action"</em> — maintains user awareness and provides a feedback surface for future refinement.
+        </div>
+      </li>
+      <li>
+        <span class="rec-num">04</span>
+        <div class="rec-text">
+          <strong>Fine-Grained Scoping within Grouped Permissions</strong>
+          Grouping reduces warning fatigue; fine-grained details in the authorization record ensure accountability. A <code>FILE_READ</code> permission should carry a binding scope constraint: authorized to read <em>this specific file</em>, not the filesystem. The group label reduces cognitive burden at authorization time; the scope constraint limits blast radius if the authorization is abused.
+        </div>
+      </li>
+      <li>
+        <span class="rec-num">05</span>
+        <div class="rec-text">
+          <strong>Durable Consent Platform with Full Lifecycle Management</strong>
+          Users must be able to review, revise, and revoke prior authorizations. Consent is not a one-time event — it is a policy that must be manageable over time as users' understanding of consequences matures. A consent platform transforms authorization from an onboarding formality into a first-class security surface.
+        </div>
+      </li>
+    </ul>
+
+    <div class="section-divider">§</div>
+
+    <h2>Where the Android Analogy Reaches Its Limits</h2>
+
+    <p>The mobile permission studies give us the diagnostic framework. But the agentic context is meaningfully harder than a misconfigured app. A user who approves an agent to retrieve documents, summarize emails, and book calendar events has not approved three discrete actions. They have opened a compositional attack surface whose full consequence space neither they nor the system designer can fully anticipate at authorization time.</p>
+
+    <p>This is where new authorization primitives become not an academic interest but an engineering necessity:</p>
+
+    <div class="protocol-strip">
+      <div class="proto">
+        <span class="proto-name">RFC 9396</span>
+        <span class="proto-desc">Rich Authorization Requests — scoped, action-specific consent tokens with structured authorization detail objects</span>
+      </div>
+      <div class="proto">
+        <span class="proto-name">Transaction Tokens</span>
+        <span class="proto-desc">IETF draft — time-bounded delegation tokens that propagate caller context across multi-hop agentic chains</span>
+      </div>
+      <div class="proto">
+        <span class="proto-name">Step-Up Auth</span>
+        <span class="proto-desc">Re-authentication triggered by elevated-risk actions — defers consent cost to the moment of consequence</span>
+      </div>
+    </div>
+
+    <p>These protocols do not solve consent fatigue by themselves. But they provide the authorization substrate on which a meaningful consent model can be built — one where each agent action carries a token that encodes not just <em>who authorized it</em> but <em>what specifically was authorized</em>, <em>under what conditions</em>, and <em>for how long</em>.</p>
+
+    <div class="pull-quote">
+      <p>Consent fatigue in AI is not inevitable. It is a design choice, made incrementally, each time an authorization surface is built for legal coverage rather than human comprehension.</p>
+    </div>
+
+    <div class="section-divider">§</div>
+
+    <h2>Conclusion</h2>
+
+    <p>The history of mobile permission systems offers a sobering lesson for the architects of agentic AI. Felt et al. demonstrated with empirical rigor that broad, decontextualized permission prompts failed the majority of Android users — not because those users were careless, but because the system placed an unreasonable cognitive burden on them at precisely the wrong moment. The AI industry is on the verge of repeating that mistake at a significantly larger scale, with significantly higher stakes.</p>
+
+    <p>The mitigation path is not mysterious. It requires grouping consent meaningfully rather than exhaustively, framing authorization requests around consequences rather than capabilities, auto-approving low-risk actions with transparent notification rather than silently proceeding or noisily interrupting, and giving users a durable consent platform where prior approvals can be reviewed, revised, and revoked.</p>
+
+    <p>These are not novel ideas. They are the lessons the mobile ecosystem learned over a decade, now waiting to be applied. What remains is the will to treat meaningful consent as a first-class security property — not an onboarding formality.</p>
+
+  </article>
+
+
+
+</div>
+</body>
+</html>
